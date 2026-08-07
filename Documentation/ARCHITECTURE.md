@@ -269,3 +269,52 @@ Rules:
 - Cross-feature dependencies should be rare and explicit.
 - Do not introduce separate Swift packages yet.
 - Modularize later only when real boundaries justify the build complexity.
+
+---
+
+# State Management and Dependency Injection
+
+## State Management
+
+- Use SwiftUI Observation (`@Observable`) for feature state where appropriate.
+- State should be owned by the feature that requires it.
+- Avoid global mutable state.
+- Keep presentation state separate from business rules.
+- Keep state as small and focused as practical.
+
+## Dependency Injection
+
+- Prefer constructor injection.
+- Introduce protocols at meaningful dependency boundaries where substitution, isolation, or testing benefits justify the abstraction.
+- Do not create protocols solely for architectural ceremony.
+- Environment values are reserved for truly application-wide dependencies or SwiftUI-propagated concerns.
+- Feature-specific dependencies should normally be passed explicitly.
+- Avoid service locators.
+- Avoid singleton-based application architecture.
+
+## Services
+
+Services should prefer stateless behavior when state is unnecessary.
+
+When a service must own state:
+
+- ownership must be explicit
+- lifecycle must be clear
+- concurrency/isolation requirements must be defined
+- shared mutable state should be avoided unless genuinely required
+
+Examples include:
+
+- Date providers
+- Currency formatting
+- Logging
+- Import/export
+- Synchronization
+
+Services must not become repositories of unrelated functionality.
+
+## Testing
+
+- Business logic should be testable without SwiftUI.
+- Business logic should be testable without SwiftData where practical.
+- Dependencies should be replaceable with test doubles.
