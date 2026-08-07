@@ -36,6 +36,14 @@ Agents must not introduce architecture changes implicitly.
 
 Any architectural change must be explicit and documented.
 
+Agents must also:
+
+- not introduce service-locator architecture
+- not introduce application-wide singleton architecture
+- not create protocols solely for architectural ceremony
+- preserve the separation between domain models and persistence models
+- avoid exposing SwiftData `@Model` objects as feature-domain APIs
+
 ## Coding Rules
 
 - Use modern Swift.

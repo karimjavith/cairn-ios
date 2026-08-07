@@ -93,7 +93,7 @@ The repository and application source should remain organized around clear owner
 
 ## Repository Structure
 
-The repository-level structure is:
+The current repository-level structure is:
 
 ```text
 cairn-ios/
@@ -103,16 +103,30 @@ cairn-ios/
 │   ├── CairnTests/
 │   └── CairnUITests/
 ├── Documentation/
-├── Scripts/
-└── .github/
+├── AGENTS.md
+└── README.md
 ```
 
 Responsibilities:
 
 - `App/` contains the Xcode project, application source, and test targets.
 - `Documentation/` contains product, engineering, and architecture documentation.
-- `Scripts/` contains automation and local development tooling.
-- `.github/` contains GitHub-specific automation, workflows, and repository configuration.
+- `AGENTS.md` contains operating instructions for AI coding agents.
+- `README.md` contains repository onboarding and validation guidance.
+
+Planned repository-level infrastructure:
+
+```text
+Scripts/
+.github/
+```
+
+These directories should be introduced only when automation or repository configuration is actually needed.
+
+When introduced:
+
+- `Scripts/` should contain automation and local development tooling.
+- `.github/` should contain GitHub-specific automation, workflows, and repository configuration.
 
 ## Application Source Structure
 
@@ -240,6 +254,16 @@ It is responsible for:
 - persistence mapping
 
 Business logic should not couple directly to `ModelContext`.
+
+SwiftData `@Model` types are persistence models, not feature-domain models.
+
+Rules:
+
+- Domain models must be independent of SwiftData.
+- Domain models must not use `@Model` or other persistence annotations.
+- Persistence models should not be exposed as feature-domain APIs.
+- Mapping between persistence models and domain models belongs at persistence or repository boundaries.
+- Features should express business behavior in domain terms rather than SwiftData implementation terms.
 
 ### Resources
 
