@@ -318,3 +318,49 @@ Services must not become repositories of unrelated functionality.
 - Business logic should be testable without SwiftUI.
 - Business logic should be testable without SwiftData where practical.
 - Dependencies should be replaceable with test doubles.
+
+---
+
+# Application Composition
+
+## Composition Root
+
+- Cairn has one composition root owned by the app layer.
+- The composition root creates and wires application-wide dependencies.
+- Feature code must not construct concrete infrastructure dependencies itself.
+
+## SwiftData
+
+- `ModelContainer` is created at application startup.
+- Persistence configuration belongs in the Persistence layer.
+- Features receive persistence capabilities through explicit abstractions rather than creating their own `ModelContainer` or directly owning `ModelContext` as business logic.
+
+## Dependency Assembly
+
+- Concrete implementations are assembled in the app layer.
+- Constructor injection is preferred.
+- SwiftUI Environment is used only for truly application-wide or framework-propagated concerns.
+- Feature-specific dependencies should normally be injected explicitly.
+
+## Root Navigation
+
+- Root navigation is owned by the app layer.
+- Features own their local navigation destinations and flows.
+- Avoid a single global navigation object that knows every internal feature detail.
+
+## Future Infrastructure
+
+Future capabilities such as:
+
+- synchronization
+- import/export
+- notifications
+- authentication, if ever required
+
+should plug into the composition root rather than being instantiated ad hoc inside features.
+
+## Lifecycle
+
+- Application-scoped dependencies must have explicit lifetimes.
+- Stateful dependencies must define ownership and concurrency isolation.
+- Avoid hidden singleton lifetimes.
