@@ -84,3 +84,188 @@ Prefer straightforward solutions.
 Avoid architectural patterns that exist only to satisfy trends or frameworks.
 
 Complexity should be introduced only when it solves a demonstrated problem.
+
+---
+
+# Structure
+
+The repository and application source should remain organized around clear ownership boundaries.
+
+## Repository Structure
+
+The repository-level structure is:
+
+```text
+cairn-ios/
+├── App/
+│   ├── Cairn.xcodeproj
+│   ├── Cairn/
+│   ├── CairnTests/
+│   └── CairnUITests/
+├── Documentation/
+├── Scripts/
+└── .github/
+```
+
+Responsibilities:
+
+- `App/` contains the Xcode project, application source, and test targets.
+- `Documentation/` contains product, engineering, and architecture documentation.
+- `Scripts/` contains automation and local development tooling.
+- `.github/` contains GitHub-specific automation, workflows, and repository configuration.
+
+## Application Source Structure
+
+Application source under `App/Cairn/` should use this structure:
+
+```text
+App/
+Features/
+Core/
+Persistence/
+Resources/
+```
+
+### App
+
+`App` owns application composition.
+
+It is responsible for:
+
+- application entry point
+- root navigation
+- dependency composition
+- lifecycle and environment configuration
+
+`App` must not contain product business rules.
+
+### Features
+
+`Features` is organized by product capability.
+
+Example features may include:
+
+- Dashboard
+- Accounts
+- Transactions
+- Budgets
+- Settings
+
+Each feature should own the UI, domain logic, feature services, and tests needed for that capability.
+
+Where useful, a feature may use this internal structure:
+
+```text
+FeatureName/
+├── Presentation/
+├── Domain/
+└── Support/
+```
+
+Not every feature needs every directory.
+
+Empty structural folders should not be created speculatively.
+
+#### Presentation
+
+`Presentation` contains SwiftUI-facing feature code.
+
+It is responsible for:
+
+- SwiftUI screens
+- feature-specific reusable views
+- presentation state
+- navigation destinations
+
+Presentation may depend on domain abstractions.
+
+Presentation must not directly depend on concrete persistence implementation details.
+
+#### Domain
+
+`Domain` contains feature business behavior.
+
+It is responsible for:
+
+- business rules
+- value types
+- calculations
+- policies
+- validation
+- use cases
+- domain services
+
+Domain must not depend on SwiftUI.
+
+Domain should remain independent of SwiftData where practical.
+
+#### Support
+
+`Support` contains feature-specific helpers that do not belong in presentation or domain.
+
+Use `Support` sparingly.
+
+It must not become a dumping ground.
+
+### Core
+
+`Core` contains genuinely shared capabilities used across multiple features.
+
+Examples include:
+
+- foundational value types
+- shared protocols
+- logging abstractions
+- currency utilities
+- date utilities
+- application-wide design primitives
+
+Do not move code into `Core` merely because it is reused once.
+
+Prefer trivial duplication over premature shared abstractions.
+
+Shared code belongs in `Core` only when multiple features depend on it for the same reason and the abstraction is stable enough to justify the shared ownership.
+
+### Persistence
+
+`Persistence` owns SwiftData-specific infrastructure.
+
+It is responsible for:
+
+- SwiftData models
+- `ModelContainer` configuration
+- repositories
+- schema versions
+- migration plans
+- persistence mapping
+
+Business logic should not couple directly to `ModelContext`.
+
+### Resources
+
+`Resources` contains application-wide assets, localization, and configuration resources.
+
+Feature-specific resources should remain with their feature where practical.
+
+---
+
+# Dependency Direction
+
+Dependencies should flow through the system in this direction:
+
+```text
+SwiftUI Presentation
+        ↓
+      Domain
+        ↑
+Persistence / Infrastructure
+```
+
+Rules:
+
+- Domain must not depend on presentation.
+- Domain should not depend on concrete persistence implementations.
+- Persistence and infrastructure adapt external systems to domain concepts.
+- Cross-feature dependencies should be rare and explicit.
+- Do not introduce separate Swift packages yet.
+- Modularize later only when real boundaries justify the build complexity.
