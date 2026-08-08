@@ -69,3 +69,4 @@ Use one of:
 | [21-budget-persistence-model.md](21-budget-persistence-model.md) | completed |
 | [22-strict-decimal-persistence-consistency.md](22-strict-decimal-persistence-consistency.md) | completed |
 | [23-budget-repository.md](23-budget-repository.md) | completed |
+| [24-goal-persistence-model.md](24-goal-persistence-model.md) | completed |
