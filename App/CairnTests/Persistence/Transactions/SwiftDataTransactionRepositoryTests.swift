@@ -120,6 +120,80 @@ struct SwiftDataTransactionRepositoryTests {
         #expect(transactions == [first, second, third])
     }
 
+    @Test func fetchTransactionsByCategoryReturnsOnlyMatchingCategorizedTransactions() async throws {
+        let repository = try makeRepository()
+        let requestedCategoryID = CategoryID()
+        let otherCategoryID = CategoryID()
+        let matching = try makeTransaction(categoryID: requestedCategoryID, memo: "Matching")
+        let otherCategory = try makeTransaction(categoryID: otherCategoryID, memo: "Other")
+        let uncategorized = try makeTransaction(categoryID: nil, memo: "Uncategorized")
+
+        try await repository.save(otherCategory)
+        try await repository.save(uncategorized)
+        try await repository.save(matching)
+
+        let transactions = try await repository.fetchTransactions(categoryID: requestedCategoryID)
+        #expect(transactions == [matching])
+    }
+
+    @Test func fetchTransactionsByCategoryOrdersByOccurredAtDescending() async throws {
+        let repository = try makeRepository()
+        let categoryID = CategoryID()
+        let oldest = try makeTransaction(
+            occurredAt: Date(timeIntervalSince1970: 1_786_080_000),
+            categoryID: categoryID,
+            memo: "Oldest"
+        )
+        let newest = try makeTransaction(
+            occurredAt: Date(timeIntervalSince1970: 1_786_252_800),
+            categoryID: categoryID,
+            memo: "Newest"
+        )
+        let middle = try makeTransaction(
+            occurredAt: Date(timeIntervalSince1970: 1_786_166_400),
+            categoryID: categoryID,
+            memo: "Middle"
+        )
+
+        try await repository.save(oldest)
+        try await repository.save(newest)
+        try await repository.save(middle)
+
+        let transactions = try await repository.fetchTransactions(categoryID: categoryID)
+        #expect(transactions == [newest, middle, oldest])
+    }
+
+    @Test func fetchTransactionsByCategoryUsesStableTransactionIDOrderingWhenOccurredAtValuesAreEqual() async throws {
+        let repository = try makeRepository()
+        let categoryID = CategoryID()
+        let occurredAt = Date(timeIntervalSince1970: 1_786_080_000)
+        let first = try makeTransaction(
+            id: TransactionID(rawValue: try #require(UUID(uuidString: "11111111-1111-1111-1111-111111111111"))),
+            occurredAt: occurredAt,
+            categoryID: categoryID,
+            memo: "First"
+        )
+        let second = try makeTransaction(
+            id: TransactionID(rawValue: try #require(UUID(uuidString: "22222222-2222-2222-2222-222222222222"))),
+            occurredAt: occurredAt,
+            categoryID: categoryID,
+            memo: "Second"
+        )
+        let third = try makeTransaction(
+            id: TransactionID(rawValue: try #require(UUID(uuidString: "33333333-3333-3333-3333-333333333333"))),
+            occurredAt: occurredAt,
+            categoryID: categoryID,
+            memo: "Third"
+        )
+
+        try await repository.save(third)
+        try await repository.save(first)
+        try await repository.save(second)
+
+        let transactions = try await repository.fetchTransactions(categoryID: categoryID)
+        #expect(transactions == [first, second, third])
+    }
+
     @Test func repeatedSaveWithSameTransactionIDUpdatesWithoutCreatingDuplicates() async throws {
         let repository = try makeRepository()
         let id = TransactionID()
@@ -148,6 +222,45 @@ struct SwiftDataTransactionRepositoryTests {
         #expect(try await repository.fetchTransactions(accountID: originalAccountID) == [])
         #expect(try await repository.fetchTransactions(accountID: updatedAccountID) == [updated])
         #expect(try await repository.fetchTransaction(id: id) == updated)
+    }
+
+    @Test func savingExistingTransactionWithChangedCategoryIDUpdatesPersistence() async throws {
+        let repository = try makeRepository()
+        let id = TransactionID()
+        let originalCategoryID = CategoryID()
+        let updatedCategoryID = CategoryID()
+        let original = try makeTransaction(id: id, categoryID: originalCategoryID)
+        let updated = try makeTransaction(id: id, categoryID: updatedCategoryID, memo: "Moved")
+
+        try await repository.save(original)
+        try await repository.save(updated)
+
+        #expect(try await repository.fetchTransactions(categoryID: originalCategoryID) == [])
+        #expect(try await repository.fetchTransactions(categoryID: updatedCategoryID) == [updated])
+        #expect(try await repository.fetchTransaction(id: id) == updated)
+    }
+
+    @Test func repositoryPreservesNilCategoryID() async throws {
+        let repository = try makeRepository()
+        let transaction = try makeTransaction(categoryID: nil)
+
+        try await repository.save(transaction)
+
+        let fetchedTransaction = try #require(try await repository.fetchTransaction(id: transaction.id))
+        #expect(fetchedTransaction.categoryID == nil)
+        #expect(fetchedTransaction == transaction)
+    }
+
+    @Test func repositoryPreservesCategoryID() async throws {
+        let repository = try makeRepository()
+        let categoryID = CategoryID(rawValue: try #require(UUID(uuidString: "4D26CE21-335E-4C27-98DA-164C86E20AD8")))
+        let transaction = try makeTransaction(categoryID: categoryID)
+
+        try await repository.save(transaction)
+
+        let fetchedTransaction = try #require(try await repository.fetchTransaction(id: transaction.id))
+        #expect(fetchedTransaction.categoryID == categoryID)
+        #expect(fetchedTransaction == transaction)
     }
 
     @Test func updatedAmountPreservesDecimalPrecision() async throws {
@@ -253,7 +366,7 @@ struct SwiftDataTransactionRepositoryTests {
         ))
         try insertContext.save()
 
-        let repository = SwiftDataTransactionRepository(modelContainer: container)
+        let repository = await SwiftDataTransactionRepository(modelContainer: container)
 
         await #expect(throws: TransactionRecordMappingError.invalidDirection("credit")) {
             try await repository.fetchTransactions(accountID: accountID)
@@ -279,6 +392,7 @@ struct SwiftDataTransactionRepositoryTests {
         direction: TransactionDirection = .outflow,
         amount: Money? = nil,
         occurredAt: Date = Date(timeIntervalSince1970: 1_786_080_000),
+        categoryID: CategoryID? = nil,
         memo: String? = "Lunch"
     ) throws -> Transaction {
         try Transaction(
@@ -287,6 +401,7 @@ struct SwiftDataTransactionRepositoryTests {
             direction: direction,
             amount: amount ?? Money(amount: 12.34, currencyCode: "GBP"),
             occurredAt: occurredAt,
+            categoryID: categoryID,
             memo: memo
         )
     }

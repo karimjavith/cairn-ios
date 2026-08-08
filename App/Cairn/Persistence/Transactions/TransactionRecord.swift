@@ -16,6 +16,7 @@ nonisolated final class TransactionRecord {
     var amount: String
     var currencyCode: String
     var occurredAt: Date
+    var categoryID: UUID?
     var memo: String?
 
     init(
@@ -25,6 +26,7 @@ nonisolated final class TransactionRecord {
         amount: String,
         currencyCode: String,
         occurredAt: Date,
+        categoryID: UUID? = nil,
         memo: String?
     ) {
         self.id = id
@@ -33,6 +35,7 @@ nonisolated final class TransactionRecord {
         self.amount = amount
         self.currencyCode = currencyCode
         self.occurredAt = occurredAt
+        self.categoryID = categoryID
         self.memo = memo
     }
 }
@@ -46,6 +49,7 @@ extension TransactionRecord {
             amount: transaction.amount.amount.persistenceValue,
             currencyCode: transaction.amount.currencyCode,
             occurredAt: transaction.occurredAt,
+            categoryID: transaction.categoryID?.rawValue,
             memo: transaction.memo
         )
     }
@@ -64,6 +68,7 @@ extension TransactionRecord {
             direction: transactionDirection,
             amount: money,
             occurredAt: occurredAt,
+            categoryID: categoryID.map(CategoryID.init(rawValue:)),
             memo: memo
         )
     }

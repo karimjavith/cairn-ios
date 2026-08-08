@@ -399,6 +399,10 @@ private actor InMemoryBalanceTransactionRepository: TransactionRepository {
         return transactions.filter { $0.accountID == accountID }
     }
 
+    func fetchTransactions(categoryID: CategoryID) async throws -> [Transaction] {
+        transactions.filter { $0.categoryID == categoryID }
+    }
+
     func fetchTransaction(id: TransactionID) async throws -> Transaction? {
         transactions.first { $0.id == id }
     }

@@ -26,6 +26,7 @@ nonisolated struct Transaction: Equatable, Hashable, Sendable {
     let direction: TransactionDirection
     let amount: Money
     let occurredAt: Date
+    let categoryID: CategoryID?
     let memo: String?
 
     init(
@@ -34,6 +35,7 @@ nonisolated struct Transaction: Equatable, Hashable, Sendable {
         direction: TransactionDirection,
         amount: Money,
         occurredAt: Date,
+        categoryID: CategoryID? = nil,
         memo: String? = nil
     ) throws {
         guard amount.amount >= 0 else {
@@ -45,6 +47,7 @@ nonisolated struct Transaction: Equatable, Hashable, Sendable {
         self.direction = direction
         self.amount = amount
         self.occurredAt = occurredAt
+        self.categoryID = categoryID
         self.memo = Self.normalizedMemo(memo)
     }
 
@@ -73,6 +76,7 @@ nonisolated extension Transaction: Codable {
         case amount
         case currencyCode
         case occurredAt
+        case categoryID
         case memo
     }
 
@@ -89,6 +93,7 @@ nonisolated extension Transaction: Codable {
             direction: container.decode(TransactionDirection.self, forKey: .direction),
             amount: amount,
             occurredAt: container.decode(Date.self, forKey: .occurredAt),
+            categoryID: container.decodeIfPresent(CategoryID.self, forKey: .categoryID),
             memo: container.decodeIfPresent(String.self, forKey: .memo)
         )
     }
@@ -102,6 +107,7 @@ nonisolated extension Transaction: Codable {
         try container.encode(amount.amount, forKey: .amount)
         try container.encode(amount.currencyCode, forKey: .currencyCode)
         try container.encode(occurredAt, forKey: .occurredAt)
+        try container.encodeIfPresent(categoryID, forKey: .categoryID)
         try container.encodeIfPresent(memo, forKey: .memo)
     }
 }

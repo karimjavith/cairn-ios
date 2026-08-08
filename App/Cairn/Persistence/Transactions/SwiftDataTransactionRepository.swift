@@ -27,6 +27,22 @@ actor SwiftDataTransactionRepository: TransactionRepository {
         return try modelContext.fetch(descriptor).map { try $0.transaction() }
     }
 
+    func fetchTransactions(categoryID: CategoryID) async throws -> [Transaction] {
+        let rawCategoryID = Optional(categoryID.rawValue)
+        var descriptor = FetchDescriptor<TransactionRecord>(
+            predicate: #Predicate { record in
+                record.categoryID == rawCategoryID
+            },
+            sortBy: [
+                SortDescriptor(\.occurredAt, order: .reverse),
+                SortDescriptor(\.id)
+            ]
+        )
+        descriptor.includePendingChanges = true
+
+        return try modelContext.fetch(descriptor).map { try $0.transaction() }
+    }
+
     func fetchTransaction(id: TransactionID) async throws -> Transaction? {
         try fetchRecord(id: id)?.transaction()
     }
@@ -74,6 +90,7 @@ private extension TransactionRecord {
         amount = updatedRecord.amount
         currencyCode = updatedRecord.currencyCode
         occurredAt = updatedRecord.occurredAt
+        categoryID = updatedRecord.categoryID
         memo = updatedRecord.memo
     }
 }

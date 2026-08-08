@@ -15,6 +15,7 @@ struct TransactionRecordTests {
     @Test func transactionToRecordPreservesPersistedValues() throws {
         let id = TransactionID(rawValue: try #require(UUID(uuidString: "36C6C328-4227-4CBA-8F29-16B5EC114286")))
         let accountID = AccountID(rawValue: try #require(UUID(uuidString: "9E849395-8DC9-481A-B56F-1EC9AF46A57D")))
+        let categoryID = CategoryID(rawValue: try #require(UUID(uuidString: "4D26CE21-335E-4C27-98DA-164C86E20AD8")))
         let amount = try #require(Decimal(string: "1234567890.123456789"))
         let occurredAt = Date(timeIntervalSince1970: 1_786_080_000)
         let transaction = try Transaction(
@@ -23,6 +24,7 @@ struct TransactionRecordTests {
             direction: .outflow,
             amount: Money(amount: amount, currencyCode: "gbp"),
             occurredAt: occurredAt,
+            categoryID: categoryID,
             memo: "  Lunch\n"
         )
 
@@ -34,6 +36,7 @@ struct TransactionRecordTests {
         #expect(record.amount == "1234567890.123456789")
         #expect(record.currencyCode == "GBP")
         #expect(record.occurredAt == occurredAt)
+        #expect(record.categoryID == categoryID.rawValue)
         #expect(record.memo == "Lunch")
     }
 
@@ -49,6 +52,7 @@ struct TransactionRecordTests {
             amount: "42.01",
             currencyCode: "EUR",
             occurredAt: occurredAt,
+            categoryID: nil,
             memo: "Salary"
         )
 
@@ -59,6 +63,7 @@ struct TransactionRecordTests {
             direction: .inflow,
             amount: Money(amount: amount, currencyCode: "EUR"),
             occurredAt: occurredAt,
+            categoryID: nil,
             memo: "Salary"
         )
 
@@ -81,6 +86,23 @@ struct TransactionRecordTests {
         let roundTrippedTransaction = try TransactionRecord(transaction: transaction).transaction()
 
         #expect(roundTrippedTransaction.accountID == accountID)
+    }
+
+    @Test func nilCategoryIDSurvivesMappingRoundTrip() throws {
+        let transaction = try makeTransaction(categoryID: nil)
+
+        let roundTrippedTransaction = try TransactionRecord(transaction: transaction).transaction()
+
+        #expect(roundTrippedTransaction.categoryID == nil)
+    }
+
+    @Test func categoryIDSurvivesCompleteMappingRoundTrip() throws {
+        let categoryID = CategoryID(rawValue: try #require(UUID(uuidString: "4D26CE21-335E-4C27-98DA-164C86E20AD8")))
+        let transaction = try makeTransaction(categoryID: categoryID)
+
+        let roundTrippedTransaction = try TransactionRecord(transaction: transaction).transaction()
+
+        #expect(roundTrippedTransaction.categoryID == categoryID)
     }
 
     @Test func highPrecisionDecimalAmountSurvivesMappingRoundTrip() throws {
@@ -210,6 +232,7 @@ struct TransactionRecordTests {
     @Test func swiftDataPersistenceRoundTripPreservesTransactionValues() throws {
         let id = TransactionID(rawValue: try #require(UUID(uuidString: "BDE30E88-71A6-40E8-95E6-E529614A92F3")))
         let accountID = AccountID(rawValue: try #require(UUID(uuidString: "3A8D42D7-56B1-4039-8DC1-80F0AD3374D7")))
+        let categoryID = CategoryID(rawValue: try #require(UUID(uuidString: "4D26CE21-335E-4C27-98DA-164C86E20AD8")))
         let amount = try #require(Decimal(string: "1234567890.123456789012345678"))
         let occurredAt = Date(timeIntervalSince1970: 1_786_339_200)
         let transaction = try Transaction(
@@ -218,6 +241,7 @@ struct TransactionRecordTests {
             direction: .outflow,
             amount: Money(amount: amount, currencyCode: "gbp"),
             occurredAt: occurredAt,
+            categoryID: categoryID,
             memo: "  Rent\n"
         )
         let container = try makeInMemoryModelContainer()
@@ -237,7 +261,26 @@ struct TransactionRecordTests {
         #expect(fetchedTransaction.amount.amount == amount)
         #expect(fetchedTransaction.amount.currencyCode == "GBP")
         #expect(fetchedTransaction.occurredAt == occurredAt)
+        #expect(fetchedTransaction.categoryID == categoryID)
         #expect(fetchedTransaction.memo == "Rent")
+    }
+
+    @Test func swiftDataPersistenceRoundTripPreservesNilCategoryID() throws {
+        let transaction = try makeTransaction(categoryID: nil)
+        let container = try makeInMemoryModelContainer()
+        let insertContext = ModelContext(container)
+
+        insertContext.insert(TransactionRecord(transaction: transaction))
+        try insertContext.save()
+
+        let fetchContext = ModelContext(container)
+        let descriptor = FetchDescriptor<TransactionRecord>()
+        let fetchedRecord = try #require(try fetchContext.fetch(descriptor).first)
+        let fetchedTransaction = try fetchedRecord.transaction()
+
+        #expect(fetchedRecord.categoryID == nil)
+        #expect(fetchedTransaction.categoryID == nil)
+        #expect(fetchedTransaction == transaction)
     }
 
     private func makeTransaction(
@@ -246,6 +289,7 @@ struct TransactionRecordTests {
         direction: TransactionDirection = .outflow,
         amount: Money? = nil,
         occurredAt: Date = Date(timeIntervalSince1970: 1_786_080_000),
+        categoryID: CategoryID? = nil,
         memo: String? = "Lunch"
     ) throws -> Transaction {
         let defaultID = TransactionID(rawValue: try #require(UUID(uuidString: "36C6C328-4227-4CBA-8F29-16B5EC114286")))
@@ -257,6 +301,7 @@ struct TransactionRecordTests {
             direction: direction,
             amount: amount ?? Money(amount: 12.34, currencyCode: "GBP"),
             occurredAt: occurredAt,
+            categoryID: categoryID,
             memo: memo
         )
     }

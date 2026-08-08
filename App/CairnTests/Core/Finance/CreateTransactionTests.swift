@@ -38,6 +38,7 @@ struct CreateTransactionTests {
         #expect(transaction.direction == .outflow)
         #expect(transaction.amount == amount)
         #expect(transaction.occurredAt == occurredAt)
+        #expect(transaction.categoryID == nil)
         #expect(transaction.memo == "Lunch")
         #expect(savedTransactions == [transaction])
         #expect(savedTransactions.count == 1)
@@ -86,6 +87,49 @@ struct CreateTransactionTests {
         )
 
         #expect(transaction.amount.currencyCode == "GBP")
+        #expect(await transactionRepository.savedTransactions() == [transaction])
+    }
+
+    @Test func providedCategoryIDIsPreserved() async throws {
+        let account = try makeAccount()
+        let categoryID = CategoryID(rawValue: try #require(UUID(uuidString: "4D26CE21-335E-4C27-98DA-164C86E20AD8")))
+        let transactionRepository = InMemoryTransactionRepository()
+        let createTransaction = CreateTransaction(
+            accountRepository: InMemoryAccountRepository(accounts: [account]),
+            transactionRepository: transactionRepository
+        )
+
+        let transaction = try await createTransaction(
+            id: makeTransactionID(),
+            accountID: account.id,
+            direction: .outflow,
+            amount: Money(amount: 10, currencyCode: "GBP"),
+            occurredAt: Date(timeIntervalSince1970: 1_786_080_000),
+            categoryID: categoryID
+        )
+
+        #expect(transaction.categoryID == categoryID)
+        #expect(await transactionRepository.savedTransactions() == [transaction])
+    }
+
+    @Test func nilCategoryIDRemainsNil() async throws {
+        let account = try makeAccount()
+        let transactionRepository = InMemoryTransactionRepository()
+        let createTransaction = CreateTransaction(
+            accountRepository: InMemoryAccountRepository(accounts: [account]),
+            transactionRepository: transactionRepository
+        )
+
+        let transaction = try await createTransaction(
+            id: makeTransactionID(),
+            accountID: account.id,
+            direction: .outflow,
+            amount: Money(amount: 10, currencyCode: "GBP"),
+            occurredAt: Date(timeIntervalSince1970: 1_786_080_000),
+            categoryID: nil
+        )
+
+        #expect(transaction.categoryID == nil)
         #expect(await transactionRepository.savedTransactions() == [transaction])
     }
 
@@ -278,6 +322,7 @@ struct CreateTransactionTests {
         direction: TransactionDirection = .outflow,
         amount: Money? = nil,
         occurredAt: Date = Date(timeIntervalSince1970: 1_786_080_000),
+        categoryID: CategoryID? = nil,
         memo: String? = "Lunch"
     ) throws -> Transaction {
         try Transaction(
@@ -286,6 +331,7 @@ struct CreateTransactionTests {
             direction: direction,
             amount: amount ?? Money(amount: 12.34, currencyCode: "GBP"),
             occurredAt: occurredAt,
+            categoryID: categoryID,
             memo: memo
         )
     }
@@ -356,6 +402,10 @@ private actor InMemoryTransactionRepository: TransactionRepository {
 
     func fetchTransactions(accountID: AccountID) async throws -> [Transaction] {
         transactions.filter { $0.accountID == accountID }
+    }
+
+    func fetchTransactions(categoryID: CategoryID) async throws -> [Transaction] {
+        transactions.filter { $0.categoryID == categoryID }
     }
 
     func fetchTransaction(id: TransactionID) async throws -> Transaction? {

@@ -14,6 +14,7 @@ struct TransactionTests {
     @Test func initializationStoresValues() throws {
         let id = TransactionID(rawValue: try #require(UUID(uuidString: "36C6C328-4227-4CBA-8F29-16B5EC114286")))
         let accountID = AccountID(rawValue: try #require(UUID(uuidString: "9E849395-8DC9-481A-B56F-1EC9AF46A57D")))
+        let categoryID = CategoryID(rawValue: try #require(UUID(uuidString: "4D26CE21-335E-4C27-98DA-164C86E20AD8")))
         let amount = try Money(amount: 12.34, currencyCode: "GBP")
         let occurredAt = Date(timeIntervalSince1970: 1_786_080_000)
 
@@ -23,6 +24,7 @@ struct TransactionTests {
             direction: .outflow,
             amount: amount,
             occurredAt: occurredAt,
+            categoryID: categoryID,
             memo: "Lunch"
         )
 
@@ -31,7 +33,22 @@ struct TransactionTests {
         #expect(transaction.direction == .outflow)
         #expect(transaction.amount == amount)
         #expect(transaction.occurredAt == occurredAt)
+        #expect(transaction.categoryID == categoryID)
         #expect(transaction.memo == "Lunch")
+    }
+
+    @Test func initializationAllowsNilCategory() throws {
+        let transaction = try makeTransaction(categoryID: nil)
+
+        #expect(transaction.categoryID == nil)
+    }
+
+    @Test func initializationPreservesCategoryID() throws {
+        let categoryID = CategoryID(rawValue: try #require(UUID(uuidString: "4D26CE21-335E-4C27-98DA-164C86E20AD8")))
+
+        let transaction = try makeTransaction(categoryID: categoryID)
+
+        #expect(transaction.categoryID == categoryID)
     }
 
     @Test func propertiesAreImmutableAfterInitialization() throws {
@@ -105,6 +122,7 @@ struct TransactionTests {
             direction: .outflow,
             amount: amount,
             occurredAt: occurredAt,
+            categoryID: nil,
             memo: "Lunch"
         )
         let same = try Transaction(
@@ -113,6 +131,7 @@ struct TransactionTests {
             direction: .outflow,
             amount: amount,
             occurredAt: occurredAt,
+            categoryID: nil,
             memo: "Lunch"
         )
         let different = try Transaction(
@@ -121,6 +140,7 @@ struct TransactionTests {
             direction: .inflow,
             amount: amount,
             occurredAt: occurredAt,
+            categoryID: nil,
             memo: "Lunch"
         )
 
@@ -169,6 +189,27 @@ struct TransactionTests {
         #expect(decoded == transaction)
     }
 
+    @Test func transactionCodablePreservesNilCategory() throws {
+        let transaction = try makeTransaction(categoryID: nil)
+
+        let encoded = try JSONEncoder().encode(transaction)
+        let decoded = try JSONDecoder().decode(Transaction.self, from: encoded)
+
+        #expect(decoded.categoryID == nil)
+        #expect(decoded == transaction)
+    }
+
+    @Test func transactionCodablePreservesCategoryID() throws {
+        let categoryID = CategoryID(rawValue: try #require(UUID(uuidString: "4D26CE21-335E-4C27-98DA-164C86E20AD8")))
+        let transaction = try makeTransaction(categoryID: categoryID)
+
+        let encoded = try JSONEncoder().encode(transaction)
+        let decoded = try JSONDecoder().decode(Transaction.self, from: encoded)
+
+        #expect(decoded.categoryID == categoryID)
+        #expect(decoded == transaction)
+    }
+
     @Test func transactionCodablePreservesDirectionSeparateFromAmountSign() throws {
         let transaction = try makeTransaction(
             direction: .outflow,
@@ -206,6 +247,7 @@ struct TransactionTests {
         direction: TransactionDirection = .outflow,
         amount: Money? = nil,
         occurredAt: Date = Date(timeIntervalSince1970: 1_786_080_000),
+        categoryID: CategoryID? = nil,
         memo: String? = "Lunch"
     ) throws -> Transaction {
         let defaultID = TransactionID(rawValue: try #require(UUID(uuidString: "36C6C328-4227-4CBA-8F29-16B5EC114286")))
@@ -217,6 +259,7 @@ struct TransactionTests {
             direction: direction,
             amount: amount ?? Money(amount: 12.34, currencyCode: "GBP"),
             occurredAt: occurredAt,
+            categoryID: categoryID,
             memo: memo
         )
     }

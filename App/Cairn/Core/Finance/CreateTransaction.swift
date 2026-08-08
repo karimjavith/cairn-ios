@@ -25,6 +25,7 @@ nonisolated struct CreateTransaction: Sendable {
         direction: TransactionDirection,
         amount: Money,
         occurredAt: Date,
+        categoryID: CategoryID? = nil,
         memo: String? = nil
     ) async throws -> Transaction {
         guard let account = try await accountRepository.fetchAccount(id: accountID) else {
@@ -48,6 +49,7 @@ nonisolated struct CreateTransaction: Sendable {
             direction: direction,
             amount: amount,
             occurredAt: occurredAt,
+            categoryID: categoryID,
             memo: memo
         )
 
