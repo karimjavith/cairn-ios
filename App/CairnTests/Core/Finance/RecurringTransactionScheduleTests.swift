@@ -281,6 +281,20 @@ struct RecurringTransactionScheduleTests {
         #expect(occurrences == expected)
     }
 
+    @Test func emptyBoundedRangeReturnsNoOccurrences() throws {
+        let calendar = utcCalendar()
+        let boundary = try date(2026, 1, 2, 9, 0, calendar: calendar)
+        let recurringTransaction = try makeRecurringTransaction(
+            frequency: .daily,
+            startDate: try date(2026, 1, 1, 9, 0, calendar: calendar)
+        )
+        let schedule = RecurringTransactionSchedule(recurringTransaction: recurringTransaction, calendar: calendar)
+
+        let occurrences = try schedule.occurrences(in: boundary..<boundary)
+
+        #expect(occurrences == [])
+    }
+
     @Test func monthlyTimeOfDayIsPreserved() throws {
         let calendar = utcCalendar()
         let recurringTransaction = try makeRecurringTransaction(

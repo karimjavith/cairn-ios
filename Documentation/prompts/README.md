@@ -82,3 +82,4 @@ Use one of:
 | [33-recurring-transaction-scheduling.md](33-recurring-transaction-scheduling.md) | completed |
 | [34a-bounded-transaction-date-query.md](34a-bounded-transaction-date-query.md) | completed |
 | [34-cash-flow-summary.md](34-cash-flow-summary.md) | completed |
+| [35-application-workflow-consistency-audit.md](35-application-workflow-consistency-audit.md) | completed |
