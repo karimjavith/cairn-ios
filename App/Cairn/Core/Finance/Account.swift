@@ -38,7 +38,9 @@ nonisolated struct Account: Equatable, Hashable, Sendable {
         currencyCode: String,
         openingBalance: Money
     ) throws {
-        guard !name.isEmpty else {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedName.isEmpty else {
             throw ValidationError.emptyName
         }
 
@@ -55,7 +57,7 @@ nonisolated struct Account: Equatable, Hashable, Sendable {
         }
 
         self.id = id
-        self.name = name
+        self.name = trimmedName
         self.type = type
         self.currencyCode = normalizedCurrencyCode
         self.openingBalance = openingBalance

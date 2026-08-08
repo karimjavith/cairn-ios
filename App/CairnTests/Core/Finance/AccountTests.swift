@@ -56,6 +56,19 @@ struct AccountTests {
         #expect(account.currencyCode == "GBP")
     }
 
+    @Test func initializationTrimsName() throws {
+        let openingBalance = try Money(amount: 100, currencyCode: "GBP")
+
+        let account = try Account(
+            name: "  Everyday\n",
+            type: .checking,
+            currencyCode: "GBP",
+            openingBalance: openingBalance
+        )
+
+        #expect(account.name == "Everyday")
+    }
+
     @Test func idDefaultsToUniqueUUIDBackedValues() {
         let first = AccountID()
         let second = AccountID()
@@ -92,6 +105,19 @@ struct AccountTests {
         #expect(throws: Account.ValidationError.emptyName) {
             try Account(
                 name: "",
+                type: .checking,
+                currencyCode: "GBP",
+                openingBalance: openingBalance
+            )
+        }
+    }
+
+    @Test func initializationRejectsWhitespaceOnlyName() throws {
+        let openingBalance = try Money(amount: 0, currencyCode: "GBP")
+
+        #expect(throws: Account.ValidationError.emptyName) {
+            try Account(
+                name: " \n\t ",
                 type: .checking,
                 currencyCode: "GBP",
                 openingBalance: openingBalance
