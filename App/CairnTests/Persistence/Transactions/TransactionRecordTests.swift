@@ -161,6 +161,22 @@ struct TransactionRecordTests {
         }
     }
 
+    @Test func partiallyParsedPersistedDecimalFailsReconstruction() {
+        let record = makeRecord(amount: "12abc")
+
+        #expect(throws: TransactionRecordMappingError.invalidAmount("12abc")) {
+            try record.transaction()
+        }
+    }
+
+    @Test func localeStylePersistedDecimalFailsReconstruction() {
+        let record = makeRecord(amount: "1,23")
+
+        #expect(throws: TransactionRecordMappingError.invalidAmount("1,23")) {
+            try record.transaction()
+        }
+    }
+
     @Test func negativePersistedAmountFailsThroughDomainValidation() {
         let record = makeRecord(amount: "-1")
 

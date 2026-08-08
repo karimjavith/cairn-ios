@@ -159,6 +159,22 @@ struct AccountRecordTests {
         }
     }
 
+    @Test func partiallyParsedPersistedOpeningBalanceAmountFailsReconstruction() {
+        let record = makeRecord(openingBalanceAmount: "12abc")
+
+        #expect(throws: AccountRecordMappingError.invalidOpeningBalanceAmount("12abc")) {
+            try record.account()
+        }
+    }
+
+    @Test func localeStylePersistedOpeningBalanceAmountFailsReconstruction() {
+        let record = makeRecord(openingBalanceAmount: "1,23")
+
+        #expect(throws: AccountRecordMappingError.invalidOpeningBalanceAmount("1,23")) {
+            try record.account()
+        }
+    }
+
     @Test func swiftDataPersistenceRoundTripPreservesAccountValues() throws {
         let id = AccountID(rawValue: try #require(UUID(uuidString: "4A084B67-AF4E-45C9-9FC0-C599E2515A48")))
         let amount = try #require(Decimal(string: "1234567890.123456789012345678"))
@@ -186,6 +202,18 @@ struct AccountRecordTests {
         #expect(fetchedAccount.openingBalance.currencyCode == "GBP")
         #expect(fetchedAccount.type == .savings)
         #expect(fetchedAccount.name == "High Precision Savings")
+    }
+
+    private func makeRecord(
+        openingBalanceAmount: String = "12.34"
+    ) -> AccountRecord {
+        AccountRecord(
+            id: UUID(),
+            name: "Savings",
+            type: "savings",
+            currencyCode: "GBP",
+            openingBalanceAmount: openingBalanceAmount
+        )
     }
 
     private func makeInMemoryModelContainer() throws -> ModelContainer {

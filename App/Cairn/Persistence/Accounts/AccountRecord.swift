@@ -105,12 +105,20 @@ private extension AccountType {
 }
 
 private extension Decimal {
+    private nonisolated static var accountPersistencePattern: String {
+        #"\A[+-]?(?:(?:[0-9]+(?:\.[0-9]*)?)|(?:\.[0-9]+))(?:[eE][+-]?[0-9]+)?\z"#
+    }
+
     nonisolated var persistenceValue: String {
         NSDecimalNumber(decimal: self).stringValue
     }
 
     nonisolated init(persistenceValue: String) throws(AccountRecordMappingError) {
-        guard let amount = Decimal(string: persistenceValue) else {
+        guard persistenceValue.range(
+            of: Self.accountPersistencePattern,
+            options: .regularExpression
+        ) != nil,
+            let amount = Decimal(string: persistenceValue) else {
             throw .invalidOpeningBalanceAmount(persistenceValue)
         }
 

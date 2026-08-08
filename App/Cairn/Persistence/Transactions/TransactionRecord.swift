@@ -97,12 +97,20 @@ private extension TransactionDirection {
 }
 
 private extension Decimal {
+    private nonisolated static var transactionPersistencePattern: String {
+        #"\A[+-]?(?:(?:[0-9]+(?:\.[0-9]*)?)|(?:\.[0-9]+))(?:[eE][+-]?[0-9]+)?\z"#
+    }
+
     nonisolated var persistenceValue: String {
         NSDecimalNumber(decimal: self).stringValue
     }
 
     nonisolated init(transactionPersistenceValue: String) throws(TransactionRecordMappingError) {
-        guard let amount = Decimal(string: transactionPersistenceValue) else {
+        guard transactionPersistenceValue.range(
+            of: Self.transactionPersistencePattern,
+            options: .regularExpression
+        ) != nil,
+            let amount = Decimal(string: transactionPersistenceValue) else {
             throw .invalidAmount(transactionPersistenceValue)
         }
 
