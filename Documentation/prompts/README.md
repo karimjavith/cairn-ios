@@ -74,3 +74,4 @@ Use one of:
 | [26-recurring-transaction-persistence-model.md](26-recurring-transaction-persistence-model.md) | completed |
 | [27-recurring-transaction-repository.md](27-recurring-transaction-repository.md) | completed |
 | [28-persistence-consistency-audit.md](28-persistence-consistency-audit.md) | completed |
+| [29-create-transaction-workflow.md](29-create-transaction-workflow.md) | completed |
