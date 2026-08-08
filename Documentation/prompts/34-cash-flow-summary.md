@@ -1,6 +1,6 @@
 # Milestone 34: Cash-Flow Summary
 
-Status: in-progress
+Status: completed
 
 ## Objective
 
@@ -35,20 +35,16 @@ for a requested finite date interval.
 
 ## Affected Files
 
-Expected implementation files, once the repository contract can support the calculation:
-
 - `App/Cairn/Core/Finance/CalculateCashFlowSummary.swift`
 - `App/CairnTests/Core/Finance/CalculateCashFlowSummaryTests.swift`
 - `Documentation/prompts/34-cash-flow-summary.md`
 - `Documentation/prompts/README.md`
 
-Milestone 34A provides the required bounded cross-account transaction query:
+Milestone 34A resolved the repository blocker by adding the required bounded cross-account transaction query:
 
 ```swift
 fetchTransactions(occurredFrom:occurredBefore:)
 ```
-
-Milestone 34 itself remains unimplemented until that prerequisite lands.
 
 ## Key Design Decisions
 
@@ -59,10 +55,15 @@ Milestone 34 itself remains unimplemented until that prerequisite lands.
 - Use `Money.adding(_:)` and `Money.subtracting(_:)` for Decimal-preserving arithmetic.
 - Do not sort transactions because aggregation must be independent of transaction ordering.
 - Let repository failures propagate unchanged where practical.
+- Introduce `CashFlowSummaryPeriod` as the smallest focused finite-period representation for this calculator.
+- Reject invalid periods before calling the repository.
+- Rely on the repository date query as the period boundary and avoid redundant production date filtering.
+- Filter by the caller-supplied summary currency in the calculator because global cash-flow input may legitimately include transactions from several currencies.
 
 ## Period Semantics
 
 - The requested period must be finite.
+- Both `start` and `end` must be finite `Date` values; infinite boundaries are invalid.
 - The period uses `start <= occurredAt < end`.
 - The start boundary is inclusive.
 - The end boundary is exclusive.
