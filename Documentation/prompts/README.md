@@ -73,3 +73,4 @@ Use one of:
 | [25-goal-repository.md](25-goal-repository.md) | completed |
 | [26-recurring-transaction-persistence-model.md](26-recurring-transaction-persistence-model.md) | completed |
 | [27-recurring-transaction-repository.md](27-recurring-transaction-repository.md) | completed |
+| [28-persistence-consistency-audit.md](28-persistence-consistency-audit.md) | completed |

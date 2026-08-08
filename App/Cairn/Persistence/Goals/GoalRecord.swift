@@ -78,6 +78,10 @@ nonisolated enum GoalRecordMappingError: Error, Equatable, Sendable {
 }
 
 private extension Decimal {
+    private nonisolated static var goalPersistenceLocale: Locale {
+        Locale(identifier: "en_US_POSIX")
+    }
+
     private nonisolated static var goalPersistencePattern: String {
         #"\A[+-]?(?:(?:[0-9]+(?:\.[0-9]*)?)|(?:\.[0-9]+))(?:[eE][+-]?[0-9]+)?\z"#
     }
@@ -91,7 +95,10 @@ private extension Decimal {
             of: Self.goalPersistencePattern,
             options: .regularExpression
         ) != nil,
-            let amount = Decimal(string: goalTargetPersistenceValue) else {
+            let amount = Decimal(
+                string: goalTargetPersistenceValue,
+                locale: Self.goalPersistenceLocale
+            ) else {
             throw .invalidTargetAmount(goalTargetPersistenceValue)
         }
 
@@ -103,7 +110,10 @@ private extension Decimal {
             of: Self.goalPersistencePattern,
             options: .regularExpression
         ) != nil,
-            let amount = Decimal(string: goalCurrentPersistenceValue) else {
+            let amount = Decimal(
+                string: goalCurrentPersistenceValue,
+                locale: Self.goalPersistenceLocale
+            ) else {
             throw .invalidCurrentAmount(goalCurrentPersistenceValue)
         }
 

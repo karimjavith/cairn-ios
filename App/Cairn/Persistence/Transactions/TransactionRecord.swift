@@ -97,6 +97,10 @@ private extension TransactionDirection {
 }
 
 private extension Decimal {
+    private nonisolated static var transactionPersistenceLocale: Locale {
+        Locale(identifier: "en_US_POSIX")
+    }
+
     private nonisolated static var transactionPersistencePattern: String {
         #"\A[+-]?(?:(?:[0-9]+(?:\.[0-9]*)?)|(?:\.[0-9]+))(?:[eE][+-]?[0-9]+)?\z"#
     }
@@ -110,7 +114,10 @@ private extension Decimal {
             of: Self.transactionPersistencePattern,
             options: .regularExpression
         ) != nil,
-            let amount = Decimal(string: transactionPersistenceValue) else {
+            let amount = Decimal(
+                string: transactionPersistenceValue,
+                locale: Self.transactionPersistenceLocale
+            ) else {
             throw .invalidAmount(transactionPersistenceValue)
         }
 

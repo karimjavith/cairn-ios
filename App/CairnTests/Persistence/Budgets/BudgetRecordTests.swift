@@ -144,6 +144,28 @@ struct BudgetRecordTests {
         }
     }
 
+    @Test func dotDecimalPersistedLimitReconstructsExactly() throws {
+        let record = makeRecord(limitAmount: "42.01")
+        let expectedAmount = try #require(
+            Decimal(string: "42.01", locale: Locale(identifier: "en_US_POSIX"))
+        )
+
+        let budget = try record.budget()
+
+        #expect(budget.limit.amount == expectedAmount)
+    }
+
+    @Test func exponentPersistedLimitReconstructsExactly() throws {
+        let record = makeRecord(limitAmount: "1.23e2")
+        let expectedAmount = try #require(
+            Decimal(string: "123", locale: Locale(identifier: "en_US_POSIX"))
+        )
+
+        let budget = try record.budget()
+
+        #expect(budget.limit.amount == expectedAmount)
+    }
+
     @Test func partiallyParsedPersistedDecimalFailsReconstruction() {
         let record = makeRecord(limitAmount: "12abc")
 

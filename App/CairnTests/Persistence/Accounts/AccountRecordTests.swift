@@ -159,6 +159,28 @@ struct AccountRecordTests {
         }
     }
 
+    @Test func dotDecimalPersistedOpeningBalanceReconstructsExactly() throws {
+        let record = makeRecord(openingBalanceAmount: "42.01")
+        let expectedAmount = try #require(
+            Decimal(string: "42.01", locale: Locale(identifier: "en_US_POSIX"))
+        )
+
+        let account = try record.account()
+
+        #expect(account.openingBalance.amount == expectedAmount)
+    }
+
+    @Test func exponentPersistedOpeningBalanceReconstructsExactly() throws {
+        let record = makeRecord(openingBalanceAmount: "1.23e2")
+        let expectedAmount = try #require(
+            Decimal(string: "123", locale: Locale(identifier: "en_US_POSIX"))
+        )
+
+        let account = try record.account()
+
+        #expect(account.openingBalance.amount == expectedAmount)
+    }
+
     @Test func partiallyParsedPersistedOpeningBalanceAmountFailsReconstruction() {
         let record = makeRecord(openingBalanceAmount: "12abc")
 

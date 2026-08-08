@@ -180,6 +180,43 @@ struct GoalRecordTests {
         }
     }
 
+    @Test func dotDecimalPersistedTargetAmountReconstructsExactly() throws {
+        let record = makeRecord(targetAmount: "42.01", currentAmount: "12.34")
+        let expectedAmount = try #require(
+            Decimal(string: "42.01", locale: Locale(identifier: "en_US_POSIX"))
+        )
+
+        let goal = try record.goal()
+
+        #expect(goal.targetAmount.amount == expectedAmount)
+    }
+
+    @Test func dotDecimalPersistedCurrentAmountReconstructsExactly() throws {
+        let record = makeRecord(targetAmount: "42.01", currentAmount: "12.34")
+        let expectedAmount = try #require(
+            Decimal(string: "12.34", locale: Locale(identifier: "en_US_POSIX"))
+        )
+
+        let goal = try record.goal()
+
+        #expect(goal.currentAmount.amount == expectedAmount)
+    }
+
+    @Test func exponentPersistedGoalAmountsReconstructExactly() throws {
+        let record = makeRecord(targetAmount: "1.23e2", currentAmount: "1.2e1")
+        let expectedTargetAmount = try #require(
+            Decimal(string: "123", locale: Locale(identifier: "en_US_POSIX"))
+        )
+        let expectedCurrentAmount = try #require(
+            Decimal(string: "12", locale: Locale(identifier: "en_US_POSIX"))
+        )
+
+        let goal = try record.goal()
+
+        #expect(goal.targetAmount.amount == expectedTargetAmount)
+        #expect(goal.currentAmount.amount == expectedCurrentAmount)
+    }
+
     @Test(arguments: ["12abc", "1,23", "not-a-number"])
     func malformedPersistedTargetDecimalFailsReconstruction(value: String) {
         let record = makeRecord(targetAmount: value)

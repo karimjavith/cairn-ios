@@ -161,6 +161,28 @@ struct TransactionRecordTests {
         }
     }
 
+    @Test func dotDecimalPersistedTextReconstructsExactly() throws {
+        let record = makeRecord(amount: "42.01")
+        let expectedAmount = try #require(
+            Decimal(string: "42.01", locale: Locale(identifier: "en_US_POSIX"))
+        )
+
+        let transaction = try record.transaction()
+
+        #expect(transaction.amount.amount == expectedAmount)
+    }
+
+    @Test func exponentPersistedTextReconstructsExactly() throws {
+        let record = makeRecord(amount: "1.23e2")
+        let expectedAmount = try #require(
+            Decimal(string: "123", locale: Locale(identifier: "en_US_POSIX"))
+        )
+
+        let transaction = try record.transaction()
+
+        #expect(transaction.amount.amount == expectedAmount)
+    }
+
     @Test func partiallyParsedPersistedDecimalFailsReconstruction() {
         let record = makeRecord(amount: "12abc")
 

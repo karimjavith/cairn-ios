@@ -71,6 +71,10 @@ nonisolated enum BudgetRecordMappingError: Error, Equatable, Sendable {
 }
 
 private extension Decimal {
+    private nonisolated static var budgetPersistenceLocale: Locale {
+        Locale(identifier: "en_US_POSIX")
+    }
+
     private nonisolated static var budgetPersistencePattern: String {
         #"\A[+-]?(?:(?:[0-9]+(?:\.[0-9]*)?)|(?:\.[0-9]+))(?:[eE][+-]?[0-9]+)?\z"#
     }
@@ -84,7 +88,10 @@ private extension Decimal {
             of: Self.budgetPersistencePattern,
             options: .regularExpression
         ) != nil,
-            let amount = Decimal(string: budgetPersistenceValue) else {
+            let amount = Decimal(
+                string: budgetPersistenceValue,
+                locale: Self.budgetPersistenceLocale
+            ) else {
             throw .invalidLimitAmount(budgetPersistenceValue)
         }
 

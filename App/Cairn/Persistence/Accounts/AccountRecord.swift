@@ -105,6 +105,10 @@ private extension AccountType {
 }
 
 private extension Decimal {
+    private nonisolated static var accountPersistenceLocale: Locale {
+        Locale(identifier: "en_US_POSIX")
+    }
+
     private nonisolated static var accountPersistencePattern: String {
         #"\A[+-]?(?:(?:[0-9]+(?:\.[0-9]*)?)|(?:\.[0-9]+))(?:[eE][+-]?[0-9]+)?\z"#
     }
@@ -118,7 +122,10 @@ private extension Decimal {
             of: Self.accountPersistencePattern,
             options: .regularExpression
         ) != nil,
-            let amount = Decimal(string: persistenceValue) else {
+            let amount = Decimal(
+                string: persistenceValue,
+                locale: Self.accountPersistenceLocale
+            ) else {
             throw .invalidOpeningBalanceAmount(persistenceValue)
         }
 
