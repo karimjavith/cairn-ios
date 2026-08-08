@@ -11,7 +11,9 @@ import SwiftData
 @main
 struct CairnApp: App {
     private let modelContainer: ModelContainer = {
-        let schema = Schema()
+        let schema = Schema([
+            AccountRecord.self
+        ])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         do {
