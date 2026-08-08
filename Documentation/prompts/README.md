@@ -79,3 +79,4 @@ Use one of:
 | [31a-transaction-category-assignment.md](31a-transaction-category-assignment.md) | completed |
 | [31-budget-progress.md](31-budget-progress.md) | completed |
 | [32-goal-progress.md](32-goal-progress.md) | completed |
+| [33-recurring-transaction-scheduling.md](33-recurring-transaction-scheduling.md) | completed |
