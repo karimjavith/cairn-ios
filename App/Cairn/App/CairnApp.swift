@@ -13,6 +13,7 @@ struct CairnApp: App {
     private let modelContainer: ModelContainer = {
         let schema = Schema([
             AccountRecord.self,
+            CategoryRecord.self,
             TransactionRecord.self
         ])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
