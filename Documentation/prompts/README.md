@@ -68,3 +68,4 @@ Use one of:
 | [20-category-repository.md](20-category-repository.md) | completed |
 | [21-budget-persistence-model.md](21-budget-persistence-model.md) | completed |
 | [22-strict-decimal-persistence-consistency.md](22-strict-decimal-persistence-consistency.md) | completed |
+| [23-budget-repository.md](23-budget-repository.md) | completed |
