@@ -16,6 +16,7 @@ struct CairnApp: App {
             BudgetRecord.self,
             CategoryRecord.self,
             GoalRecord.self,
+            RecurringTransactionRecord.self,
             TransactionRecord.self
         ])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)

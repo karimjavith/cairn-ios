@@ -71,3 +71,4 @@ Use one of:
 | [23-budget-repository.md](23-budget-repository.md) | completed |
 | [24-goal-persistence-model.md](24-goal-persistence-model.md) | completed |
 | [25-goal-repository.md](25-goal-repository.md) | completed |
+| [26-recurring-transaction-persistence-model.md](26-recurring-transaction-persistence-model.md) | completed |
