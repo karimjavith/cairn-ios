@@ -77,4 +77,4 @@ Use one of:
 | [29-create-transaction-workflow.md](29-create-transaction-workflow.md) | completed |
 | [30-account-balance-aggregation.md](30-account-balance-aggregation.md) | completed |
 | [31a-transaction-category-assignment.md](31a-transaction-category-assignment.md) | completed |
-| [31-budget-progress.md](31-budget-progress.md) | in-progress |
+| [31-budget-progress.md](31-budget-progress.md) | completed |

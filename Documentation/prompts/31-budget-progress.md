@@ -1,6 +1,6 @@
 # Milestone 31: Budget Progress Calculation
 
-Status: in-progress
+Status: completed
 
 ## Objective
 
@@ -61,7 +61,7 @@ Budget progress must be calculated from existing budgets and transactions withou
 
 Milestone 31a resolves the category-assignment/query blocker by adding optional `Transaction.categoryID` and `TransactionRepository.fetchTransactions(categoryID:)`.
 
-Milestone 31 itself remains in progress and unimplemented until the budget-progress calculator and focused tests are added against that prerequisite capability.
+Milestone 31 is implemented against the Milestone 31a prerequisite capability.
 
 ## Validation Requirements
 
@@ -93,4 +93,4 @@ Milestone 31 itself remains in progress and unimplemented until the budget-progr
 
 ## Commit Intent
 
-Commit the budget-progress calculator, focused tests, completed milestone documentation, and prompt README update after the domain/repository blocker is resolved and validation passes.
+Commit the budget-progress calculator, focused tests, completed milestone documentation, and prompt README update.
