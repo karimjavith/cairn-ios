@@ -547,6 +547,18 @@ private actor InMemoryBudgetProgressTransactionRepository: TransactionRepository
         return transactions.filter { $0.categoryID == categoryID }
     }
 
+    func fetchTransactions(occurredFrom start: Date, occurredBefore end: Date) async throws -> [Transaction] {
+        if let fetchError {
+            throw fetchError
+        }
+
+        guard start < end else {
+            throw TransactionRepositoryError.invalidDateRange
+        }
+
+        return transactions.filter { start <= $0.occurredAt && $0.occurredAt < end }
+    }
+
     func fetchTransaction(id: TransactionID) async throws -> Transaction? {
         transactions.first { $0.id == id }
     }

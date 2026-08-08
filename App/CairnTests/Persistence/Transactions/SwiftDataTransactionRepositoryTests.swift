@@ -194,6 +194,195 @@ struct SwiftDataTransactionRepositoryTests {
         #expect(transactions == [first, second, third])
     }
 
+    @Test func fetchTransactionsInDateRangeAppliesInclusiveStartAndExclusiveEndBoundaries() async throws {
+        let repository = try makeRepository()
+        let start = Date(timeIntervalSince1970: 1_786_080_000)
+        let end = Date(timeIntervalSince1970: 1_786_252_800)
+        let beforeStart = try makeTransaction(
+            occurredAt: start.addingTimeInterval(-1),
+            memo: "Before"
+        )
+        let exactlyStart = try makeTransaction(
+            occurredAt: start,
+            memo: "Start"
+        )
+        let inside = try makeTransaction(
+            occurredAt: Date(timeIntervalSince1970: 1_786_166_400),
+            memo: "Inside"
+        )
+        let exactlyEnd = try makeTransaction(
+            occurredAt: end,
+            memo: "End"
+        )
+        let afterEnd = try makeTransaction(
+            occurredAt: end.addingTimeInterval(1),
+            memo: "After"
+        )
+
+        try await repository.save(beforeStart)
+        try await repository.save(exactlyStart)
+        try await repository.save(inside)
+        try await repository.save(exactlyEnd)
+        try await repository.save(afterEnd)
+
+        let transactions = try await repository.fetchTransactions(
+            occurredFrom: start,
+            occurredBefore: end
+        )
+        #expect(transactions == [inside, exactlyStart])
+    }
+
+    @Test func fetchTransactionsInDateRangeReturnsMatchingTransactionsAcrossAccountsAndCategories() async throws {
+        let repository = try makeRepository()
+        let start = Date(timeIntervalSince1970: 1_786_080_000)
+        let end = Date(timeIntervalSince1970: 1_786_252_800)
+        let firstAccountID = AccountID()
+        let secondAccountID = AccountID()
+        let firstCategoryID = CategoryID()
+        let secondCategoryID = CategoryID()
+        let firstAccountCategorized = try makeTransaction(
+            accountID: firstAccountID,
+            occurredAt: Date(timeIntervalSince1970: 1_786_090_000),
+            categoryID: firstCategoryID,
+            memo: "First account categorized"
+        )
+        let secondAccountCategorized = try makeTransaction(
+            accountID: secondAccountID,
+            occurredAt: Date(timeIntervalSince1970: 1_786_100_000),
+            categoryID: secondCategoryID,
+            memo: "Second account categorized"
+        )
+        let uncategorized = try makeTransaction(
+            accountID: secondAccountID,
+            occurredAt: Date(timeIntervalSince1970: 1_786_110_000),
+            categoryID: nil,
+            memo: "Uncategorized"
+        )
+        let outsidePeriod = try makeTransaction(
+            accountID: firstAccountID,
+            occurredAt: end,
+            categoryID: firstCategoryID,
+            memo: "Outside"
+        )
+
+        try await repository.save(firstAccountCategorized)
+        try await repository.save(secondAccountCategorized)
+        try await repository.save(uncategorized)
+        try await repository.save(outsidePeriod)
+
+        let transactions = try await repository.fetchTransactions(
+            occurredFrom: start,
+            occurredBefore: end
+        )
+        #expect(transactions == [uncategorized, secondAccountCategorized, firstAccountCategorized])
+    }
+
+    @Test func fetchTransactionsInDateRangeDoesNotFilterByCurrencyOrDirection() async throws {
+        let repository = try makeRepository()
+        let start = Date(timeIntervalSince1970: 1_786_080_000)
+        let end = Date(timeIntervalSince1970: 1_786_252_800)
+        let gbpInflow = try makeTransaction(
+            direction: .inflow,
+            amount: Money(amount: 10, currencyCode: "GBP"),
+            occurredAt: Date(timeIntervalSince1970: 1_786_090_000),
+            memo: "GBP inflow"
+        )
+        let eurOutflow = try makeTransaction(
+            direction: .outflow,
+            amount: Money(amount: 20, currencyCode: "EUR"),
+            occurredAt: Date(timeIntervalSince1970: 1_786_100_000),
+            memo: "EUR outflow"
+        )
+
+        try await repository.save(gbpInflow)
+        try await repository.save(eurOutflow)
+
+        let transactions = try await repository.fetchTransactions(
+            occurredFrom: start,
+            occurredBefore: end
+        )
+        #expect(transactions == [eurOutflow, gbpInflow])
+    }
+
+    @Test func fetchTransactionsInDateRangeOrdersByOccurredAtDescending() async throws {
+        let repository = try makeRepository()
+        let start = Date(timeIntervalSince1970: 1_786_000_000)
+        let end = Date(timeIntervalSince1970: 1_786_300_000)
+        let oldest = try makeTransaction(
+            occurredAt: Date(timeIntervalSince1970: 1_786_080_000),
+            memo: "Oldest"
+        )
+        let newest = try makeTransaction(
+            occurredAt: Date(timeIntervalSince1970: 1_786_252_800),
+            memo: "Newest"
+        )
+        let middle = try makeTransaction(
+            occurredAt: Date(timeIntervalSince1970: 1_786_166_400),
+            memo: "Middle"
+        )
+
+        try await repository.save(oldest)
+        try await repository.save(newest)
+        try await repository.save(middle)
+
+        let transactions = try await repository.fetchTransactions(
+            occurredFrom: start,
+            occurredBefore: end
+        )
+        #expect(transactions == [newest, middle, oldest])
+    }
+
+    @Test func fetchTransactionsInDateRangeUsesStableTransactionIDOrderingWhenOccurredAtValuesAreEqual() async throws {
+        let repository = try makeRepository()
+        let start = Date(timeIntervalSince1970: 1_786_000_000)
+        let end = Date(timeIntervalSince1970: 1_786_300_000)
+        let occurredAt = Date(timeIntervalSince1970: 1_786_080_000)
+        let first = try makeTransaction(
+            id: TransactionID(rawValue: try #require(UUID(uuidString: "11111111-1111-1111-1111-111111111111"))),
+            occurredAt: occurredAt,
+            memo: "First"
+        )
+        let second = try makeTransaction(
+            id: TransactionID(rawValue: try #require(UUID(uuidString: "22222222-2222-2222-2222-222222222222"))),
+            occurredAt: occurredAt,
+            memo: "Second"
+        )
+        let third = try makeTransaction(
+            id: TransactionID(rawValue: try #require(UUID(uuidString: "33333333-3333-3333-3333-333333333333"))),
+            occurredAt: occurredAt,
+            memo: "Third"
+        )
+
+        try await repository.save(third)
+        try await repository.save(first)
+        try await repository.save(second)
+
+        let transactions = try await repository.fetchTransactions(
+            occurredFrom: start,
+            occurredBefore: end
+        )
+        #expect(transactions == [first, second, third])
+    }
+
+    @Test func fetchTransactionsInDateRangeRejectsInvalidRange() async throws {
+        let repository = try makeRepository()
+        let start = Date(timeIntervalSince1970: 1_786_080_000)
+
+        await #expect(throws: TransactionRepositoryError.invalidDateRange) {
+            try await repository.fetchTransactions(
+                occurredFrom: start,
+                occurredBefore: start
+            )
+        }
+
+        await #expect(throws: TransactionRepositoryError.invalidDateRange) {
+            try await repository.fetchTransactions(
+                occurredFrom: start,
+                occurredBefore: start.addingTimeInterval(-1)
+            )
+        }
+    }
+
     @Test func repeatedSaveWithSameTransactionIDUpdatesWithoutCreatingDuplicates() async throws {
         let repository = try makeRepository()
         let id = TransactionID()
@@ -370,6 +559,32 @@ struct SwiftDataTransactionRepositoryTests {
 
         await #expect(throws: TransactionRecordMappingError.invalidDirection("credit")) {
             try await repository.fetchTransactions(accountID: accountID)
+        }
+    }
+
+    @Test func invalidPersistedTransactionRecordInDateRangeFailsMapping() async throws {
+        let start = Date(timeIntervalSince1970: 1_786_000_000)
+        let end = Date(timeIntervalSince1970: 1_786_300_000)
+        let container = try makeInMemoryModelContainer()
+        let insertContext = ModelContext(container)
+        insertContext.insert(TransactionRecord(
+            id: TransactionID().rawValue,
+            accountID: AccountID().rawValue,
+            direction: "credit",
+            amount: "12.34",
+            currencyCode: "GBP",
+            occurredAt: Date(timeIntervalSince1970: 1_786_080_000),
+            memo: "Lunch"
+        ))
+        try insertContext.save()
+
+        let repository = await SwiftDataTransactionRepository(modelContainer: container)
+
+        await #expect(throws: TransactionRecordMappingError.invalidDirection("credit")) {
+            try await repository.fetchTransactions(
+                occurredFrom: start,
+                occurredBefore: end
+            )
         }
     }
 

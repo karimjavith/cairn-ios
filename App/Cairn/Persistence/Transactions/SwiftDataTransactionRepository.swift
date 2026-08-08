@@ -43,6 +43,25 @@ actor SwiftDataTransactionRepository: TransactionRepository {
         return try modelContext.fetch(descriptor).map { try $0.transaction() }
     }
 
+    func fetchTransactions(occurredFrom start: Date, occurredBefore end: Date) async throws -> [Transaction] {
+        guard start < end else {
+            throw TransactionRepositoryError.invalidDateRange
+        }
+
+        var descriptor = FetchDescriptor<TransactionRecord>(
+            predicate: #Predicate { record in
+                start <= record.occurredAt && record.occurredAt < end
+            },
+            sortBy: [
+                SortDescriptor(\.occurredAt, order: .reverse),
+                SortDescriptor(\.id)
+            ]
+        )
+        descriptor.includePendingChanges = true
+
+        return try modelContext.fetch(descriptor).map { try $0.transaction() }
+    }
+
     func fetchTransaction(id: TransactionID) async throws -> Transaction? {
         try fetchRecord(id: id)?.transaction()
     }

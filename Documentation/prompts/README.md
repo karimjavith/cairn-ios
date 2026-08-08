@@ -80,3 +80,5 @@ Use one of:
 | [31-budget-progress.md](31-budget-progress.md) | completed |
 | [32-goal-progress.md](32-goal-progress.md) | completed |
 | [33-recurring-transaction-scheduling.md](33-recurring-transaction-scheduling.md) | completed |
+| [34a-bounded-transaction-date-query.md](34a-bounded-transaction-date-query.md) | completed |
+| [34-cash-flow-summary.md](34-cash-flow-summary.md) | in-progress |
