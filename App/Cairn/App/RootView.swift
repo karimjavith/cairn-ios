@@ -9,20 +9,33 @@ import SwiftUI
 
 struct RootView: View {
     var body: some View {
-        VStack(spacing: 12) {
-            Text("Cairn")
-                .font(.largeTitle)
-                .fontWeight(.semibold)
-
-            Text("Personal finance, privately by design.")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+        TabView {
+            ForEach(AppTab.allCases) { tab in
+                NavigationStack {
+                    destination(for: tab)
+                }
+                .tabItem {
+                    Label(tab.title, systemImage: tab.systemImage)
+                }
+                .tag(tab)
+                .accessibilityLabel(tab.title)
+            }
         }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Cairn. Personal finance, privately by design.")
+    }
+
+    @ViewBuilder
+    private func destination(for tab: AppTab) -> some View {
+        switch tab {
+        case .dashboard:
+            DashboardView()
+        case .accounts:
+            AccountsView()
+        case .transactions:
+            TransactionsView()
+        case .budgets:
+            BudgetsView()
+        case .more:
+            MoreView()
+        }
     }
 }

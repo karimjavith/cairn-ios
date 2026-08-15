@@ -83,3 +83,4 @@ Use one of:
 | [34a-bounded-transaction-date-query.md](34a-bounded-transaction-date-query.md) | completed |
 | [34-cash-flow-summary.md](34-cash-flow-summary.md) | completed |
 | [35-application-workflow-consistency-audit.md](35-application-workflow-consistency-audit.md) | completed |
+| [36-app-navigation-shell.md](36-app-navigation-shell.md) | completed |
