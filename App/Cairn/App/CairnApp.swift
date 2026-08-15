@@ -10,7 +10,20 @@ import SwiftData
 
 @main
 struct CairnApp: App {
-    private let modelContainer: ModelContainer = {
+    private let modelContainer: ModelContainer
+    private let dependencies: AppDependencies
+
+    init() {
+        let modelContainer = Self.makeModelContainer()
+
+        self.modelContainer = modelContainer
+        dependencies = AppDependencies(
+            accountRepository: SwiftDataAccountRepository(modelContainer: modelContainer),
+            transactionRepository: SwiftDataTransactionRepository(modelContainer: modelContainer)
+        )
+    }
+
+    private static func makeModelContainer() -> ModelContainer {
         let schema = Schema([
             AccountRecord.self,
             BudgetRecord.self,
@@ -26,11 +39,11 @@ struct CairnApp: App {
         } catch {
             fatalError("Unable to create SwiftData model container: \(error)")
         }
-    }()
+    }
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            RootView(dependencies: dependencies)
         }
         .modelContainer(modelContainer)
     }

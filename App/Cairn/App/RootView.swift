@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct RootView: View {
+    let dependencies: AppDependencies
+
     var body: some View {
         TabView {
             ForEach(AppTab.allCases) { tab in
@@ -29,7 +31,11 @@ struct RootView: View {
         case .dashboard:
             DashboardView()
         case .accounts:
-            AccountsView()
+            AccountsView(
+                accountRepository: dependencies.accountRepository,
+                transactionRepository: dependencies.transactionRepository,
+                calculateAccountBalance: dependencies.calculateAccountBalance
+            )
         case .transactions:
             TransactionsView()
         case .budgets:
