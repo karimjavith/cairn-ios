@@ -254,6 +254,24 @@ struct AccountsStoreTests {
         #expect(store.featureError == nil)
     }
 
+    @Test func confirmedDeleteUsesCapturedAccountAfterPresentationStateClears() async throws {
+        let account = try makeAccount(name: "Everyday")
+        let accountRepository = AccountsFeatureAccountRepository(accounts: [account])
+        let transactionRepository = AccountsFeatureTransactionRepository()
+        let store = makeStore(
+            accountRepository: accountRepository,
+            transactionRepository: transactionRepository
+        )
+
+        store.requestDelete(account)
+        store.cancelDelete()
+        await store.confirmDelete(account)
+
+        #expect(await accountRepository.deletedAccountIDs() == [account.id])
+        #expect(await transactionRepository.fetchTransactionsCallCount(accountID: account.id) == 1)
+        #expect(store.pendingDeletion == nil)
+    }
+
     @Test func accountWithExistingTransactionsCannotBeDeleted() async throws {
         let account = try makeAccount(name: "Everyday")
         let transaction = try makeTransaction(accountID: account.id, direction: .outflow, amount: 10)

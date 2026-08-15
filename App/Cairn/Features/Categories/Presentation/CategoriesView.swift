@@ -84,7 +84,7 @@ struct CategoriesView: View {
         ) { category in
             Button("Delete \(category.name)", role: .destructive) {
                 Task {
-                    await store.confirmDelete()
+                    await store.confirmDelete(category)
                 }
             }
             Button("Cancel", role: .cancel) {

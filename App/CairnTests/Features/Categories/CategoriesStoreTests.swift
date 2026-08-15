@@ -147,6 +147,27 @@ struct CategoriesStoreTests {
         #expect(store.featureError == nil)
     }
 
+    @Test func confirmedDeleteUsesCapturedCategoryAfterPresentationStateClears() async throws {
+        let category = try makeCategory(name: "Groceries")
+        let categoryRepository = CategoriesFeatureCategoryRepository(categories: [category])
+        let transactionRepository = CategoriesFeatureTransactionRepository()
+        let budgetRepository = CategoriesFeatureBudgetRepository()
+        let store = makeStore(
+            categoryRepository: categoryRepository,
+            transactionRepository: transactionRepository,
+            budgetRepository: budgetRepository
+        )
+
+        store.requestDelete(category)
+        store.cancelDelete()
+        await store.confirmDelete(category)
+
+        #expect(await categoryRepository.deletedCategoryIDs() == [category.id])
+        #expect(await transactionRepository.fetchTransactionsCallCount(categoryID: category.id) == 1)
+        #expect(await budgetRepository.fetchBudgetsCallCount() == 1)
+        #expect(store.pendingDeletion == nil)
+    }
+
     @Test func transactionReferencedCategoryCannotBeDeleted() async throws {
         let category = try makeCategory(name: "Groceries")
         let transaction = try makeTransaction(categoryID: category.id)

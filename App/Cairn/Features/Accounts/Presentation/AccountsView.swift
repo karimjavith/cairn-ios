@@ -84,7 +84,7 @@ struct AccountsView: View {
         ) { account in
             Button("Delete \(account.name)", role: .destructive) {
                 Task {
-                    await store.confirmDelete()
+                    await store.confirmDelete(account)
                 }
             }
             Button("Cancel", role: .cancel) {

@@ -102,6 +102,10 @@ final class CategoriesStore {
             return
         }
 
+        await confirmDelete(category)
+    }
+
+    func confirmDelete(_ category: Category) async {
         pendingDeletion = nil
         featureError = nil
         errorMessage = nil

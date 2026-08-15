@@ -122,6 +122,10 @@ final class AccountsStore {
             return
         }
 
+        await confirmDelete(account)
+    }
+
+    func confirmDelete(_ account: Account) async {
         pendingDeletion = nil
         featureError = nil
 

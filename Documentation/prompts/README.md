@@ -91,3 +91,4 @@ Use one of:
 | [41-goals-feature.md](41-goals-feature.md) | completed |
 | [42-recurring-transactions-feature.md](42-recurring-transactions-feature.md) | completed |
 | [43-dashboard.md](43-dashboard.md) | completed |
+| [44-feature-ui-integration-audit.md](44-feature-ui-integration-audit.md) | completed |
