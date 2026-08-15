@@ -88,3 +88,4 @@ Use one of:
 | [38-categories-feature.md](38-categories-feature.md) | completed |
 | [39-transactions-feature.md](39-transactions-feature.md) | completed |
 | [40-budgets-feature.md](40-budgets-feature.md) | completed |
+| [41-goals-feature.md](41-goals-feature.md) | completed |

@@ -21,7 +21,8 @@ struct CairnApp: App {
             accountRepository: SwiftDataAccountRepository(modelContainer: modelContainer),
             categoryRepository: SwiftDataCategoryRepository(modelContainer: modelContainer),
             transactionRepository: SwiftDataTransactionRepository(modelContainer: modelContainer),
-            budgetRepository: SwiftDataBudgetRepository(modelContainer: modelContainer)
+            budgetRepository: SwiftDataBudgetRepository(modelContainer: modelContainer),
+            goalRepository: SwiftDataGoalRepository(modelContainer: modelContainer)
         )
     }
 

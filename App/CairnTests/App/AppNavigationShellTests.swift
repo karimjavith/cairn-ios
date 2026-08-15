@@ -33,7 +33,8 @@ struct AppNavigationShellTests {
             accountRepository: ShellAccountRepository(),
             categoryRepository: ShellCategoryRepository(),
             transactionRepository: ShellTransactionRepository(),
-            budgetRepository: ShellBudgetRepository()
+            budgetRepository: ShellBudgetRepository(),
+            goalRepository: ShellGoalRepository()
         ))
     }
 }
@@ -100,4 +101,18 @@ private actor ShellBudgetRepository: BudgetRepository {
     func save(_ budget: Budget) async throws {}
 
     func deleteBudget(id: BudgetID) async throws {}
+}
+
+private actor ShellGoalRepository: GoalRepository {
+    func fetchGoals() async throws -> [Goal] {
+        []
+    }
+
+    func fetchGoal(id: GoalID) async throws -> Goal? {
+        nil
+    }
+
+    func save(_ goal: Goal) async throws {}
+
+    func deleteGoal(id: GoalID) async throws {}
 }

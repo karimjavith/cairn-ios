@@ -53,7 +53,9 @@ struct RootView: View {
             MoreView(
                 categoryRepository: dependencies.categoryRepository,
                 transactionRepository: dependencies.transactionRepository,
-                budgetRepository: dependencies.budgetRepository
+                budgetRepository: dependencies.budgetRepository,
+                goalRepository: dependencies.goalRepository,
+                calculateGoalProgress: dependencies.calculateGoalProgress
             )
         }
     }

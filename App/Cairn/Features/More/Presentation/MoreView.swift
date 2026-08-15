@@ -11,6 +11,8 @@ struct MoreView: View {
     let categoryRepository: any CategoryRepository
     let transactionRepository: any TransactionRepository
     let budgetRepository: any BudgetRepository
+    let goalRepository: any GoalRepository
+    let calculateGoalProgress: CalculateGoalProgress
 
     var body: some View {
         List {
@@ -30,7 +32,10 @@ struct MoreView: View {
     private func moreDestinationView(for destination: MoreDestination) -> some View {
         switch destination {
         case .goals:
-            GoalsView()
+            GoalsView(
+                goalRepository: goalRepository,
+                calculateGoalProgress: calculateGoalProgress
+            )
         case .categories:
             CategoriesView(
                 categoryRepository: categoryRepository,
