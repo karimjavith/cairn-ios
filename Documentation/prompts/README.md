@@ -89,3 +89,4 @@ Use one of:
 | [39-transactions-feature.md](39-transactions-feature.md) | completed |
 | [40-budgets-feature.md](40-budgets-feature.md) | completed |
 | [41-goals-feature.md](41-goals-feature.md) | completed |
+| [42-recurring-transactions-feature.md](42-recurring-transactions-feature.md) | completed |

@@ -8,11 +8,14 @@
 import SwiftUI
 
 struct MoreView: View {
+    let accountRepository: any AccountRepository
     let categoryRepository: any CategoryRepository
     let transactionRepository: any TransactionRepository
     let budgetRepository: any BudgetRepository
     let goalRepository: any GoalRepository
+    let recurringTransactionRepository: any RecurringTransactionRepository
     let calculateGoalProgress: CalculateGoalProgress
+    let recurringTransactionCalendar: Calendar
 
     var body: some View {
         List {
@@ -43,7 +46,11 @@ struct MoreView: View {
                 budgetRepository: budgetRepository
             )
         case .recurringTransactions:
-            RecurringTransactionsView()
+            RecurringTransactionsView(
+                recurringTransactionRepository: recurringTransactionRepository,
+                accountRepository: accountRepository,
+                calendar: recurringTransactionCalendar
+            )
         }
     }
 }

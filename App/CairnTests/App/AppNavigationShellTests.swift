@@ -34,7 +34,9 @@ struct AppNavigationShellTests {
             categoryRepository: ShellCategoryRepository(),
             transactionRepository: ShellTransactionRepository(),
             budgetRepository: ShellBudgetRepository(),
-            goalRepository: ShellGoalRepository()
+            goalRepository: ShellGoalRepository(),
+            recurringTransactionRepository: ShellRecurringTransactionRepository(),
+            recurringTransactionCalendar: .init(identifier: .gregorian)
         ))
     }
 }
@@ -115,4 +117,18 @@ private actor ShellGoalRepository: GoalRepository {
     func save(_ goal: Goal) async throws {}
 
     func deleteGoal(id: GoalID) async throws {}
+}
+
+private actor ShellRecurringTransactionRepository: RecurringTransactionRepository {
+    func fetchRecurringTransactions() async throws -> [RecurringTransaction] {
+        []
+    }
+
+    func fetchRecurringTransaction(id: RecurringTransactionID) async throws -> RecurringTransaction? {
+        nil
+    }
+
+    func save(_ recurringTransaction: RecurringTransaction) async throws {}
+
+    func deleteRecurringTransaction(id: RecurringTransactionID) async throws {}
 }

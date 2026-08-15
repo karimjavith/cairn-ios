@@ -51,11 +51,14 @@ struct RootView: View {
             )
         case .more:
             MoreView(
+                accountRepository: dependencies.accountRepository,
                 categoryRepository: dependencies.categoryRepository,
                 transactionRepository: dependencies.transactionRepository,
                 budgetRepository: dependencies.budgetRepository,
                 goalRepository: dependencies.goalRepository,
-                calculateGoalProgress: dependencies.calculateGoalProgress
+                recurringTransactionRepository: dependencies.recurringTransactionRepository,
+                calculateGoalProgress: dependencies.calculateGoalProgress,
+                recurringTransactionCalendar: dependencies.recurringTransactionCalendar
             )
         }
     }

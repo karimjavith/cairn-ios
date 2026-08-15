@@ -22,7 +22,9 @@ struct CairnApp: App {
             categoryRepository: SwiftDataCategoryRepository(modelContainer: modelContainer),
             transactionRepository: SwiftDataTransactionRepository(modelContainer: modelContainer),
             budgetRepository: SwiftDataBudgetRepository(modelContainer: modelContainer),
-            goalRepository: SwiftDataGoalRepository(modelContainer: modelContainer)
+            goalRepository: SwiftDataGoalRepository(modelContainer: modelContainer),
+            recurringTransactionRepository: SwiftDataRecurringTransactionRepository(modelContainer: modelContainer),
+            recurringTransactionCalendar: .autoupdatingCurrent
         )
     }
 
