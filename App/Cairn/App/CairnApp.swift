@@ -19,7 +19,9 @@ struct CairnApp: App {
         self.modelContainer = modelContainer
         dependencies = AppDependencies(
             accountRepository: SwiftDataAccountRepository(modelContainer: modelContainer),
-            transactionRepository: SwiftDataTransactionRepository(modelContainer: modelContainer)
+            categoryRepository: SwiftDataCategoryRepository(modelContainer: modelContainer),
+            transactionRepository: SwiftDataTransactionRepository(modelContainer: modelContainer),
+            budgetRepository: SwiftDataBudgetRepository(modelContainer: modelContainer)
         )
     }
 

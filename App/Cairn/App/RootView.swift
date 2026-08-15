@@ -41,7 +41,11 @@ struct RootView: View {
         case .budgets:
             BudgetsView()
         case .more:
-            MoreView()
+            MoreView(
+                categoryRepository: dependencies.categoryRepository,
+                transactionRepository: dependencies.transactionRepository,
+                budgetRepository: dependencies.budgetRepository
+            )
         }
     }
 }

@@ -8,6 +8,10 @@
 import SwiftUI
 
 struct MoreView: View {
+    let categoryRepository: any CategoryRepository
+    let transactionRepository: any TransactionRepository
+    let budgetRepository: any BudgetRepository
+
     var body: some View {
         List {
             ForEach(MoreDestination.allCases) { destination in
@@ -28,7 +32,11 @@ struct MoreView: View {
         case .goals:
             GoalsView()
         case .categories:
-            CategoriesView()
+            CategoriesView(
+                categoryRepository: categoryRepository,
+                transactionRepository: transactionRepository,
+                budgetRepository: budgetRepository
+            )
         case .recurringTransactions:
             RecurringTransactionsView()
         }

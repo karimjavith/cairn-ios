@@ -31,7 +31,9 @@ struct AppNavigationShellTests {
     @Test func rootShellCanBeConstructed() {
         _ = RootView(dependencies: AppDependencies(
             accountRepository: ShellAccountRepository(),
-            transactionRepository: ShellTransactionRepository()
+            categoryRepository: ShellCategoryRepository(),
+            transactionRepository: ShellTransactionRepository(),
+            budgetRepository: ShellBudgetRepository()
         ))
     }
 }
@@ -70,4 +72,32 @@ private actor ShellTransactionRepository: TransactionRepository {
     func save(_ transaction: Transaction) async throws {}
 
     func deleteTransaction(id: TransactionID) async throws {}
+}
+
+private actor ShellCategoryRepository: CategoryRepository {
+    func fetchCategories() async throws -> [Cairn.Category] {
+        []
+    }
+
+    func fetchCategory(id: CategoryID) async throws -> Cairn.Category? {
+        nil
+    }
+
+    func save(_ category: Cairn.Category) async throws {}
+
+    func deleteCategory(id: CategoryID) async throws {}
+}
+
+private actor ShellBudgetRepository: BudgetRepository {
+    func fetchBudgets() async throws -> [Budget] {
+        []
+    }
+
+    func fetchBudget(id: BudgetID) async throws -> Budget? {
+        nil
+    }
+
+    func save(_ budget: Budget) async throws {}
+
+    func deleteBudget(id: BudgetID) async throws {}
 }

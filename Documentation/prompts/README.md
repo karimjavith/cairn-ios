@@ -85,3 +85,4 @@ Use one of:
 | [35-application-workflow-consistency-audit.md](35-application-workflow-consistency-audit.md) | completed |
 | [36-app-navigation-shell.md](36-app-navigation-shell.md) | completed |
 | [37-accounts-feature.md](37-accounts-feature.md) | completed |
+| [38-categories-feature.md](38-categories-feature.md) | completed |
