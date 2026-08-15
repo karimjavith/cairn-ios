@@ -24,7 +24,8 @@ struct CairnApp: App {
             budgetRepository: SwiftDataBudgetRepository(modelContainer: modelContainer),
             goalRepository: SwiftDataGoalRepository(modelContainer: modelContainer),
             recurringTransactionRepository: SwiftDataRecurringTransactionRepository(modelContainer: modelContainer),
-            recurringTransactionCalendar: .autoupdatingCurrent
+            recurringTransactionCalendar: .autoupdatingCurrent,
+            dashboardCalendar: .autoupdatingCurrent
         )
     }
 

@@ -90,3 +90,4 @@ Use one of:
 | [40-budgets-feature.md](40-budgets-feature.md) | completed |
 | [41-goals-feature.md](41-goals-feature.md) | completed |
 | [42-recurring-transactions-feature.md](42-recurring-transactions-feature.md) | completed |
+| [43-dashboard.md](43-dashboard.md) | completed |

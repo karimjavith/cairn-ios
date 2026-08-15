@@ -29,7 +29,18 @@ struct RootView: View {
     private func destination(for tab: AppTab) -> some View {
         switch tab {
         case .dashboard:
-            DashboardView()
+            DashboardView(
+                accountRepository: dependencies.accountRepository,
+                budgetRepository: dependencies.budgetRepository,
+                goalRepository: dependencies.goalRepository,
+                categoryRepository: dependencies.categoryRepository,
+                transactionRepository: dependencies.transactionRepository,
+                calculateAccountBalance: dependencies.calculateAccountBalance,
+                calculateBudgetProgress: dependencies.calculateBudgetProgress,
+                calculateGoalProgress: dependencies.calculateGoalProgress,
+                calculateCashFlowSummary: dependencies.calculateCashFlowSummary,
+                calendar: dependencies.dashboardCalendar
+            )
         case .accounts:
             AccountsView(
                 accountRepository: dependencies.accountRepository,

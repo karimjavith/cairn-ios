@@ -36,7 +36,8 @@ struct AppNavigationShellTests {
             budgetRepository: ShellBudgetRepository(),
             goalRepository: ShellGoalRepository(),
             recurringTransactionRepository: ShellRecurringTransactionRepository(),
-            recurringTransactionCalendar: .init(identifier: .gregorian)
+            recurringTransactionCalendar: .init(identifier: .gregorian),
+            dashboardCalendar: .init(identifier: .gregorian)
         ))
     }
 }

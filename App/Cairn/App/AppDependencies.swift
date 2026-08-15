@@ -15,9 +15,11 @@ struct AppDependencies {
     let goalRepository: any GoalRepository
     let recurringTransactionRepository: any RecurringTransactionRepository
     let recurringTransactionCalendar: Calendar
+    let dashboardCalendar: Calendar
     let calculateAccountBalance: CalculateAccountBalance
     let calculateBudgetProgress: CalculateBudgetProgress
     let calculateGoalProgress: CalculateGoalProgress
+    let calculateCashFlowSummary: CalculateCashFlowSummary
     let createTransaction: CreateTransaction
 
     init(
@@ -27,7 +29,8 @@ struct AppDependencies {
         budgetRepository: any BudgetRepository,
         goalRepository: any GoalRepository,
         recurringTransactionRepository: any RecurringTransactionRepository,
-        recurringTransactionCalendar: Calendar
+        recurringTransactionCalendar: Calendar,
+        dashboardCalendar: Calendar
     ) {
         self.accountRepository = accountRepository
         self.categoryRepository = categoryRepository
@@ -36,6 +39,7 @@ struct AppDependencies {
         self.goalRepository = goalRepository
         self.recurringTransactionRepository = recurringTransactionRepository
         self.recurringTransactionCalendar = recurringTransactionCalendar
+        self.dashboardCalendar = dashboardCalendar
         calculateAccountBalance = CalculateAccountBalance(
             accountRepository: accountRepository,
             transactionRepository: transactionRepository
@@ -45,6 +49,9 @@ struct AppDependencies {
             transactionRepository: transactionRepository
         )
         calculateGoalProgress = CalculateGoalProgress()
+        calculateCashFlowSummary = CalculateCashFlowSummary(
+            transactionRepository: transactionRepository
+        )
         createTransaction = CreateTransaction(
             accountRepository: accountRepository,
             transactionRepository: transactionRepository
