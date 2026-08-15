@@ -87,3 +87,4 @@ Use one of:
 | [37-accounts-feature.md](37-accounts-feature.md) | completed |
 | [38-categories-feature.md](38-categories-feature.md) | completed |
 | [39-transactions-feature.md](39-transactions-feature.md) | completed |
+| [40-budgets-feature.md](40-budgets-feature.md) | completed |

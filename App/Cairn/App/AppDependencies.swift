@@ -11,6 +11,7 @@ struct AppDependencies {
     let transactionRepository: any TransactionRepository
     let budgetRepository: any BudgetRepository
     let calculateAccountBalance: CalculateAccountBalance
+    let calculateBudgetProgress: CalculateBudgetProgress
     let createTransaction: CreateTransaction
 
     init(
@@ -25,6 +26,10 @@ struct AppDependencies {
         self.budgetRepository = budgetRepository
         calculateAccountBalance = CalculateAccountBalance(
             accountRepository: accountRepository,
+            transactionRepository: transactionRepository
+        )
+        calculateBudgetProgress = CalculateBudgetProgress(
+            budgetRepository: budgetRepository,
             transactionRepository: transactionRepository
         )
         createTransaction = CreateTransaction(
