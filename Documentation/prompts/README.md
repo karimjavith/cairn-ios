@@ -86,3 +86,4 @@ Use one of:
 | [36-app-navigation-shell.md](36-app-navigation-shell.md) | completed |
 | [37-accounts-feature.md](37-accounts-feature.md) | completed |
 | [38-categories-feature.md](38-categories-feature.md) | completed |
+| [39-transactions-feature.md](39-transactions-feature.md) | completed |

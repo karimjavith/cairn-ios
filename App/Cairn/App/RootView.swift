@@ -37,7 +37,12 @@ struct RootView: View {
                 calculateAccountBalance: dependencies.calculateAccountBalance
             )
         case .transactions:
-            TransactionsView()
+            TransactionsView(
+                transactionRepository: dependencies.transactionRepository,
+                accountRepository: dependencies.accountRepository,
+                categoryRepository: dependencies.categoryRepository,
+                createTransaction: dependencies.createTransaction
+            )
         case .budgets:
             BudgetsView()
         case .more:
