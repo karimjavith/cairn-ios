@@ -92,3 +92,4 @@ Use one of:
 | [42-recurring-transactions-feature.md](42-recurring-transactions-feature.md) | completed |
 | [43-dashboard.md](43-dashboard.md) | completed |
 | [44-feature-ui-integration-audit.md](44-feature-ui-integration-audit.md) | completed |
+| [45-local-seed-data-integration.md](45-local-seed-data-integration.md) | completed |

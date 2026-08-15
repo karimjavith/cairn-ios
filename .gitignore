@@ -68,3 +68,6 @@ fastlane/test_output
 DerivedData/
 build/
 *.xcuserstate
+
+# Local development seed data
+Local/SeedData/
