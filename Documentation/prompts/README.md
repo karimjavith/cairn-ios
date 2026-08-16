@@ -93,3 +93,4 @@ Use one of:
 | [43-dashboard.md](43-dashboard.md) | completed |
 | [44-feature-ui-integration-audit.md](44-feature-ui-integration-audit.md) | completed |
 | [45-local-seed-data-integration.md](45-local-seed-data-integration.md) | completed |
+| [46-persistence-migration-versioning.md](46-persistence-migration-versioning.md) | completed |

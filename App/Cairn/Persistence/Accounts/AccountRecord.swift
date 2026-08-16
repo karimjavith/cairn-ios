@@ -8,28 +8,32 @@
 import Foundation
 import SwiftData
 
-@Model
-nonisolated final class AccountRecord {
-    @Attribute(.unique) var id: UUID
-    var name: String
-    var type: String
-    var currencyCode: String
-    var openingBalanceAmount: String
+extension CairnSchemaV1 {
+    @Model
+    nonisolated final class AccountRecord {
+        @Attribute(.unique) var id: UUID
+        var name: String
+        var type: String
+        var currencyCode: String
+        var openingBalanceAmount: String
 
-    init(
-        id: UUID,
-        name: String,
-        type: String,
-        currencyCode: String,
-        openingBalanceAmount: String
-    ) {
-        self.id = id
-        self.name = name
-        self.type = type
-        self.currencyCode = currencyCode
-        self.openingBalanceAmount = openingBalanceAmount
+        init(
+            id: UUID,
+            name: String,
+            type: String,
+            currencyCode: String,
+            openingBalanceAmount: String
+        ) {
+            self.id = id
+            self.name = name
+            self.type = type
+            self.currencyCode = currencyCode
+            self.openingBalanceAmount = openingBalanceAmount
+        }
     }
 }
+
+typealias AccountRecord = CairnSchemaV1.AccountRecord
 
 extension AccountRecord {
     convenience init(account: Account) {

@@ -8,31 +8,35 @@
 import Foundation
 import SwiftData
 
-@Model
-nonisolated final class BudgetRecord {
-    @Attribute(.unique) var id: UUID
-    var categoryID: UUID
-    var limitAmount: String
-    var currencyCode: String
-    var startDate: Date
-    var endDate: Date
+extension CairnSchemaV1 {
+    @Model
+    nonisolated final class BudgetRecord {
+        @Attribute(.unique) var id: UUID
+        var categoryID: UUID
+        var limitAmount: String
+        var currencyCode: String
+        var startDate: Date
+        var endDate: Date
 
-    init(
-        id: UUID,
-        categoryID: UUID,
-        limitAmount: String,
-        currencyCode: String,
-        startDate: Date,
-        endDate: Date
-    ) {
-        self.id = id
-        self.categoryID = categoryID
-        self.limitAmount = limitAmount
-        self.currencyCode = currencyCode
-        self.startDate = startDate
-        self.endDate = endDate
+        init(
+            id: UUID,
+            categoryID: UUID,
+            limitAmount: String,
+            currencyCode: String,
+            startDate: Date,
+            endDate: Date
+        ) {
+            self.id = id
+            self.categoryID = categoryID
+            self.limitAmount = limitAmount
+            self.currencyCode = currencyCode
+            self.startDate = startDate
+            self.endDate = endDate
+        }
     }
 }
+
+typealias BudgetRecord = CairnSchemaV1.BudgetRecord
 
 extension BudgetRecord {
     convenience init(budget: Budget) {

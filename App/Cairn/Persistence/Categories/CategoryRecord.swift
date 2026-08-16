@@ -8,22 +8,26 @@
 import Foundation
 import SwiftData
 
-@Model
-nonisolated final class CategoryRecord {
-    @Attribute(.unique) var id: UUID
-    var name: String
-    var kind: String
+extension CairnSchemaV1 {
+    @Model
+    nonisolated final class CategoryRecord {
+        @Attribute(.unique) var id: UUID
+        var name: String
+        var kind: String
 
-    init(
-        id: UUID,
-        name: String,
-        kind: String
-    ) {
-        self.id = id
-        self.name = name
-        self.kind = kind
+        init(
+            id: UUID,
+            name: String,
+            kind: String
+        ) {
+            self.id = id
+            self.name = name
+            self.kind = kind
+        }
     }
 }
+
+typealias CategoryRecord = CairnSchemaV1.CategoryRecord
 
 extension CategoryRecord {
     convenience init(category: Category) {

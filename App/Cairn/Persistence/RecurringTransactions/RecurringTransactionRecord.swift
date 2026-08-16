@@ -8,40 +8,44 @@
 import Foundation
 import SwiftData
 
-@Model
-nonisolated final class RecurringTransactionRecord {
-    @Attribute(.unique) var id: UUID
-    var accountID: UUID
-    var direction: String
-    var amount: String
-    var currencyCode: String
-    var frequency: String
-    var startDate: Date
-    var endDate: Date?
-    var memo: String?
+extension CairnSchemaV1 {
+    @Model
+    nonisolated final class RecurringTransactionRecord {
+        @Attribute(.unique) var id: UUID
+        var accountID: UUID
+        var direction: String
+        var amount: String
+        var currencyCode: String
+        var frequency: String
+        var startDate: Date
+        var endDate: Date?
+        var memo: String?
 
-    init(
-        id: UUID,
-        accountID: UUID,
-        direction: String,
-        amount: String,
-        currencyCode: String,
-        frequency: String,
-        startDate: Date,
-        endDate: Date?,
-        memo: String?
-    ) {
-        self.id = id
-        self.accountID = accountID
-        self.direction = direction
-        self.amount = amount
-        self.currencyCode = currencyCode
-        self.frequency = frequency
-        self.startDate = startDate
-        self.endDate = endDate
-        self.memo = memo
+        init(
+            id: UUID,
+            accountID: UUID,
+            direction: String,
+            amount: String,
+            currencyCode: String,
+            frequency: String,
+            startDate: Date,
+            endDate: Date?,
+            memo: String?
+        ) {
+            self.id = id
+            self.accountID = accountID
+            self.direction = direction
+            self.amount = amount
+            self.currencyCode = currencyCode
+            self.frequency = frequency
+            self.startDate = startDate
+            self.endDate = endDate
+            self.memo = memo
+        }
     }
 }
+
+typealias RecurringTransactionRecord = CairnSchemaV1.RecurringTransactionRecord
 
 extension RecurringTransactionRecord {
     convenience init(recurringTransaction: RecurringTransaction) {

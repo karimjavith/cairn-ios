@@ -8,37 +8,41 @@
 import Foundation
 import SwiftData
 
-@Model
-nonisolated final class TransactionRecord {
-    @Attribute(.unique) var id: UUID
-    var accountID: UUID
-    var direction: String
-    var amount: String
-    var currencyCode: String
-    var occurredAt: Date
-    var categoryID: UUID?
-    var memo: String?
+extension CairnSchemaV1 {
+    @Model
+    nonisolated final class TransactionRecord {
+        @Attribute(.unique) var id: UUID
+        var accountID: UUID
+        var direction: String
+        var amount: String
+        var currencyCode: String
+        var occurredAt: Date
+        var categoryID: UUID?
+        var memo: String?
 
-    init(
-        id: UUID,
-        accountID: UUID,
-        direction: String,
-        amount: String,
-        currencyCode: String,
-        occurredAt: Date,
-        categoryID: UUID? = nil,
-        memo: String?
-    ) {
-        self.id = id
-        self.accountID = accountID
-        self.direction = direction
-        self.amount = amount
-        self.currencyCode = currencyCode
-        self.occurredAt = occurredAt
-        self.categoryID = categoryID
-        self.memo = memo
+        init(
+            id: UUID,
+            accountID: UUID,
+            direction: String,
+            amount: String,
+            currencyCode: String,
+            occurredAt: Date,
+            categoryID: UUID? = nil,
+            memo: String?
+        ) {
+            self.id = id
+            self.accountID = accountID
+            self.direction = direction
+            self.amount = amount
+            self.currencyCode = currencyCode
+            self.occurredAt = occurredAt
+            self.categoryID = categoryID
+            self.memo = memo
+        }
     }
 }
+
+typealias TransactionRecord = CairnSchemaV1.TransactionRecord
 
 extension TransactionRecord {
     convenience init(transaction: Transaction) {

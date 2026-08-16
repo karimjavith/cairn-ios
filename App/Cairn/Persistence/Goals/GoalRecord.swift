@@ -8,34 +8,38 @@
 import Foundation
 import SwiftData
 
-@Model
-nonisolated final class GoalRecord {
-    @Attribute(.unique) var id: UUID
-    var name: String
-    var targetAmount: String
-    var targetCurrencyCode: String
-    var currentAmount: String
-    var currentCurrencyCode: String
-    var targetDate: Date?
+extension CairnSchemaV1 {
+    @Model
+    nonisolated final class GoalRecord {
+        @Attribute(.unique) var id: UUID
+        var name: String
+        var targetAmount: String
+        var targetCurrencyCode: String
+        var currentAmount: String
+        var currentCurrencyCode: String
+        var targetDate: Date?
 
-    init(
-        id: UUID,
-        name: String,
-        targetAmount: String,
-        targetCurrencyCode: String,
-        currentAmount: String,
-        currentCurrencyCode: String,
-        targetDate: Date?
-    ) {
-        self.id = id
-        self.name = name
-        self.targetAmount = targetAmount
-        self.targetCurrencyCode = targetCurrencyCode
-        self.currentAmount = currentAmount
-        self.currentCurrencyCode = currentCurrencyCode
-        self.targetDate = targetDate
+        init(
+            id: UUID,
+            name: String,
+            targetAmount: String,
+            targetCurrencyCode: String,
+            currentAmount: String,
+            currentCurrencyCode: String,
+            targetDate: Date?
+        ) {
+            self.id = id
+            self.name = name
+            self.targetAmount = targetAmount
+            self.targetCurrencyCode = targetCurrencyCode
+            self.currentAmount = currentAmount
+            self.currentCurrencyCode = currentCurrencyCode
+            self.targetDate = targetDate
+        }
     }
 }
+
+typealias GoalRecord = CairnSchemaV1.GoalRecord
 
 extension GoalRecord {
     convenience init(goal: Goal) {

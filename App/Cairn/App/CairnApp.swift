@@ -57,18 +57,15 @@ struct CairnApp: App {
     }
 
     private static func makeModelContainer() -> ModelContainer {
-        let schema = Schema([
-            AccountRecord.self,
-            BudgetRecord.self,
-            CategoryRecord.self,
-            GoalRecord.self,
-            RecurringTransactionRecord.self,
-            TransactionRecord.self
-        ])
+        let schema = Schema(versionedSchema: CairnSchemaV1.self)
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         do {
-            return try ModelContainer(for: schema, configurations: [configuration])
+            return try ModelContainer(
+                for: schema,
+                migrationPlan: CairnSchemaMigrationPlan.self,
+                configurations: [configuration]
+            )
         } catch {
             fatalError("Unable to create SwiftData model container: \(error)")
         }
