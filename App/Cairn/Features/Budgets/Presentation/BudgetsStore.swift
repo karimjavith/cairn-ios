@@ -47,6 +47,10 @@ final class BudgetsStore {
         !isLoading && budgets.isEmpty && errorMessage == nil
     }
 
+    var hasLoadFailed: Bool {
+        !isLoading && budgets.isEmpty && categories.isEmpty && progressByBudgetID.isEmpty && errorMessage != nil
+    }
+
     func loadBudgets() async {
         isLoading = true
         errorMessage = nil

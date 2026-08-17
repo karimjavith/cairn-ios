@@ -80,6 +80,7 @@ struct AccountsStoreTests {
 
         #expect(store.accounts == [])
         #expect(store.errorMessage != nil)
+        #expect(store.hasLoadFailed)
     }
 
     @Test func derivedBalancesAreRequestedAndCalculated() async throws {

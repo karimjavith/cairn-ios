@@ -31,6 +31,16 @@ struct BudgetsView: View {
         Group {
             if store.isLoading {
                 ProgressView("Loading budgets")
+            } else if store.hasLoadFailed, let errorMessage = store.errorMessage {
+                LoadFailureView(
+                    title: "Budgets Unavailable",
+                    message: errorMessage,
+                    retry: {
+                        Task {
+                            await store.loadBudgets()
+                        }
+                    }
+                )
             } else if store.isEmpty {
                 ContentUnavailableView(
                     "No Budgets",
@@ -52,7 +62,7 @@ struct BudgetsView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            if let errorMessage = store.errorMessage {
+            if let errorMessage = store.errorMessage, !store.hasLoadFailed {
                 Text(errorMessage)
                     .font(.footnote)
                     .foregroundStyle(.secondary)

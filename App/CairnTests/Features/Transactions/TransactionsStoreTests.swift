@@ -51,6 +51,20 @@ struct TransactionsStoreTests {
 
         #expect(store.transactions == [])
         #expect(store.errorMessage != nil)
+        #expect(store.hasLoadFailed)
+    }
+
+    @Test func retryAfterLoadFailureRerunsLoad() async {
+        let transactionRepository = TransactionsFeatureTransactionRepository(
+            fetchDateRangeError: TransactionsFeatureRepositoryError.fetchFailed
+        )
+        let store = makeStore(transactionRepository: transactionRepository)
+
+        await store.loadTransactions()
+        await store.loadTransactions()
+
+        #expect(await transactionRepository.fetchDateRanges().count == 2)
+        #expect(store.hasLoadFailed)
     }
 
     @Test func accountAndCategoryDisplayMetadataResolveCorrectly() async throws {

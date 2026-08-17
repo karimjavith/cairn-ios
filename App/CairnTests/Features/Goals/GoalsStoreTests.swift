@@ -58,6 +58,7 @@ struct GoalsStoreTests {
         #expect(store.goals == [])
         #expect(store.progressByGoalID == [:])
         #expect(store.errorMessage != nil)
+        #expect(store.hasLoadFailed)
     }
 
     @Test func progressFailureIsSurfacedWithoutFakeProgress() async throws {

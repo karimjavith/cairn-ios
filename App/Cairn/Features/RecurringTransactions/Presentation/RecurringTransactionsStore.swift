@@ -58,6 +58,14 @@ final class RecurringTransactionsStore {
         !isLoading && recurringTransactions.isEmpty && errorMessage == nil
     }
 
+    var hasLoadFailed: Bool {
+        !isLoading
+            && recurringTransactions.isEmpty
+            && accounts.isEmpty
+            && nextOccurrenceByRecurringTransactionID.isEmpty
+            && errorMessage != nil
+    }
+
     func loadRecurringTransactions() async {
         isLoading = true
         errorMessage = nil

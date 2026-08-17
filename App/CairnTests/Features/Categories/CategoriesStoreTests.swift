@@ -41,6 +41,7 @@ struct CategoriesStoreTests {
 
         #expect(store.categories == [])
         #expect(store.errorMessage != nil)
+        #expect(store.hasLoadFailed)
     }
 
     @Test func validCreatedCategoryIsSavedWithEditorCategoryID() async throws {

@@ -28,6 +28,16 @@ struct CategoriesView: View {
         Group {
             if store.isLoading {
                 ProgressView("Loading categories")
+            } else if store.hasLoadFailed, let errorMessage = store.errorMessage {
+                LoadFailureView(
+                    title: "Categories Unavailable",
+                    message: errorMessage,
+                    retry: {
+                        Task {
+                            await store.loadCategories()
+                        }
+                    }
+                )
             } else if store.isEmpty {
                 ContentUnavailableView(
                     "No Categories",
@@ -49,7 +59,7 @@ struct CategoriesView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            if let errorMessage = store.errorMessage {
+            if let errorMessage = store.errorMessage, !store.hasLoadFailed {
                 Text(errorMessage)
                     .font(.footnote)
                     .foregroundStyle(.secondary)

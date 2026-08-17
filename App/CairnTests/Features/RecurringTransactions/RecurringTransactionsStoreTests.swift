@@ -55,6 +55,7 @@ struct RecurringTransactionsStoreTests {
         #expect(store.recurringTransactions == [])
         #expect(store.nextOccurrenceByRecurringTransactionID == [:])
         #expect(store.errorMessage != nil)
+        #expect(store.hasLoadFailed)
     }
 
     @Test func accountDisplayMetadataResolves() async throws {

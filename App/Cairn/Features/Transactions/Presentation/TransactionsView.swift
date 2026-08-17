@@ -30,6 +30,16 @@ struct TransactionsView: View {
         Group {
             if store.isLoading {
                 ProgressView("Loading transactions")
+            } else if store.hasLoadFailed, let errorMessage = store.errorMessage {
+                LoadFailureView(
+                    title: "Transactions Unavailable",
+                    message: errorMessage,
+                    retry: {
+                        Task {
+                            await store.loadTransactions()
+                        }
+                    }
+                )
             } else if store.isEmpty {
                 ContentUnavailableView(
                     "No Transactions",
@@ -51,7 +61,7 @@ struct TransactionsView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            if let errorMessage = store.errorMessage {
+            if let errorMessage = store.errorMessage, !store.hasLoadFailed {
                 Text(errorMessage)
                     .font(.footnote)
                     .foregroundStyle(.secondary)

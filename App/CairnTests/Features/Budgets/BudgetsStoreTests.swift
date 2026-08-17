@@ -61,6 +61,7 @@ struct BudgetsStoreTests {
         #expect(store.budgets == [])
         #expect(store.progressByBudgetID == [:])
         #expect(store.errorMessage != nil)
+        #expect(store.hasLoadFailed)
     }
 
     @Test func progressFailureIsSurfacedWithoutZeroSubstitution() async throws {

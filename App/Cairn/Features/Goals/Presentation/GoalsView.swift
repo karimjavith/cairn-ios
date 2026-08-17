@@ -29,6 +29,16 @@ struct GoalsView: View {
         Group {
             if store.isLoading {
                 ProgressView("Loading goals")
+            } else if store.hasLoadFailed, let errorMessage = store.errorMessage {
+                LoadFailureView(
+                    title: "Goals Unavailable",
+                    message: errorMessage,
+                    retry: {
+                        Task {
+                            await store.loadGoals()
+                        }
+                    }
+                )
             } else if store.isEmpty {
                 ContentUnavailableView(
                     "No Goals",
@@ -50,7 +60,7 @@ struct GoalsView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            if let errorMessage = store.errorMessage {
+            if let errorMessage = store.errorMessage, !store.hasLoadFailed {
                 Text(errorMessage)
                     .font(.footnote)
                     .foregroundStyle(.secondary)

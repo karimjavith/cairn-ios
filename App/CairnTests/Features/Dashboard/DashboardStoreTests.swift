@@ -66,6 +66,7 @@ struct DashboardStoreTests {
 
         #expect(store.snapshot == nil)
         #expect(store.errorMessage != nil)
+        #expect(store.hasLoadFailed)
     }
 
     @Test func cashFlowPeriodIsDeterministicAndSummaryIsLoaded() async throws {

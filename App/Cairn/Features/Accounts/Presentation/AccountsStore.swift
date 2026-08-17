@@ -55,6 +55,10 @@ final class AccountsStore {
         !isLoading && accounts.isEmpty && errorMessage == nil
     }
 
+    var hasLoadFailed: Bool {
+        !isLoading && accounts.isEmpty && errorMessage != nil
+    }
+
     func loadAccounts() async {
         isLoading = true
         errorMessage = nil

@@ -43,6 +43,10 @@ final class GoalsStore {
         !isLoading && goals.isEmpty && errorMessage == nil
     }
 
+    var hasLoadFailed: Bool {
+        !isLoading && goals.isEmpty && progressByGoalID.isEmpty && errorMessage != nil
+    }
+
     func loadGoals() async {
         isLoading = true
         errorMessage = nil

@@ -72,6 +72,10 @@ final class DashboardStore {
             && snapshot.recentTransactions.isEmpty
     }
 
+    var hasLoadFailed: Bool {
+        !isLoading && snapshot == nil && errorMessage != nil
+    }
+
     func loadDashboard() async {
         isLoading = true
         errorMessage = nil

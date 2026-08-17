@@ -48,6 +48,10 @@ final class TransactionsStore {
         !isLoading && transactions.isEmpty && errorMessage == nil
     }
 
+    var hasLoadFailed: Bool {
+        !isLoading && transactions.isEmpty && accounts.isEmpty && categories.isEmpty && errorMessage != nil
+    }
+
     func loadTransactions() async {
         isLoading = true
         errorMessage = nil

@@ -29,6 +29,16 @@ struct RecurringTransactionsView: View {
         Group {
             if store.isLoading {
                 ProgressView("Loading recurring transactions")
+            } else if store.hasLoadFailed, let errorMessage = store.errorMessage {
+                LoadFailureView(
+                    title: "Recurring Transactions Unavailable",
+                    message: errorMessage,
+                    retry: {
+                        Task {
+                            await store.loadRecurringTransactions()
+                        }
+                    }
+                )
             } else if store.isEmpty {
                 ContentUnavailableView(
                     "No Recurring Transactions",
@@ -50,7 +60,7 @@ struct RecurringTransactionsView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            if let errorMessage = store.errorMessage {
+            if let errorMessage = store.errorMessage, !store.hasLoadFailed {
                 Text(errorMessage)
                     .font(.footnote)
                     .foregroundStyle(.secondary)

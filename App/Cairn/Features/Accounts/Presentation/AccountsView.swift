@@ -28,6 +28,16 @@ struct AccountsView: View {
         Group {
             if store.isLoading {
                 ProgressView("Loading accounts")
+            } else if store.hasLoadFailed, let errorMessage = store.errorMessage {
+                LoadFailureView(
+                    title: "Accounts Unavailable",
+                    message: errorMessage,
+                    retry: {
+                        Task {
+                            await store.loadAccounts()
+                        }
+                    }
+                )
             } else if store.isEmpty {
                 ContentUnavailableView(
                     "No Accounts",
@@ -49,7 +59,7 @@ struct AccountsView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            if let errorMessage = store.errorMessage {
+            if let errorMessage = store.errorMessage, !store.hasLoadFailed {
                 Text(errorMessage)
                     .font(.footnote)
                     .foregroundStyle(.secondary)

@@ -41,6 +41,10 @@ final class CategoriesStore {
         !isLoading && categories.isEmpty && errorMessage == nil
     }
 
+    var hasLoadFailed: Bool {
+        !isLoading && categories.isEmpty && errorMessage != nil
+    }
+
     func loadCategories() async {
         isLoading = true
         errorMessage = nil

@@ -54,10 +54,14 @@ struct DashboardView: View {
             if store.isLoading {
                 ProgressView("Loading dashboard")
             } else if let errorMessage = store.errorMessage {
-                ContentUnavailableView(
-                    "Dashboard Unavailable",
-                    systemImage: "exclamationmark.triangle",
-                    description: Text(errorMessage)
+                LoadFailureView(
+                    title: "Dashboard Unavailable",
+                    message: errorMessage,
+                    retry: {
+                        Task {
+                            await store.loadDashboard()
+                        }
+                    }
                 )
             } else if let snapshot = store.snapshot {
                 dashboardContent(snapshot)
