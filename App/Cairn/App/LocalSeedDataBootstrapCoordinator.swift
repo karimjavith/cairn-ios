@@ -75,9 +75,26 @@ final class LocalSeedDataBootstrapCoordinator {
     private static func message(for error: any Error) -> String {
         switch error {
         case let seedError as LocalSeedDataError:
-            "Local seed data failed: \(seedError)"
+            "Local seed data failed: \(seedError.seedBootstrapMessage)"
         default:
-            "Local seed data failed: \(error)"
+            "Local seed data failed."
+        }
+    }
+}
+
+private nonisolated extension LocalSeedDataError {
+    var seedBootstrapMessage: String {
+        switch self {
+        case .missingFile:
+            "Seed file is missing."
+        case .unsupportedVersion:
+            "Seed file version is unsupported."
+        case .decodeFailed:
+            "Seed file could not be decoded."
+        case .invalidDomainData:
+            "Seed file contains invalid data."
+        case .storeNotEmpty:
+            "Local store is not empty."
         }
     }
 }

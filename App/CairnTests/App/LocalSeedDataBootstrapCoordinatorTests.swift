@@ -75,7 +75,7 @@ struct LocalSeedDataBootstrapCoordinatorTests {
         #expect(probe.invocationCount == 1)
     }
 
-    @Test func failureTransitionsToExplicitFailureState() async {
+    @Test func failureTransitionsToSanitizedFailureState() async {
         let probe = BootstrapProbe(error: LocalSeedDataError.missingFile(URL(filePath: "/tmp/missing.json")))
         let coordinator = LocalSeedDataBootstrapCoordinator(
             configuration: enabledConfiguration(),
@@ -90,9 +90,30 @@ struct LocalSeedDataBootstrapCoordinatorTests {
         }
 
         #expect(message.contains("Local seed data failed"))
-        #expect(message.contains("missingFile"))
+        #expect(message.contains("Seed file is missing."))
+        #expect(!message.contains("missingFile"))
+        #expect(!message.contains("/tmp/missing.json"))
         #expect(!coordinator.isRootAvailable)
         #expect(probe.invocationCount == 1)
+    }
+
+    @Test func unknownFailureDoesNotExposeRawErrorDescription() async {
+        let probe = BootstrapProbe(error: SensitiveProbeError())
+        let coordinator = LocalSeedDataBootstrapCoordinator(
+            configuration: enabledConfiguration(),
+            load: probe.load
+        )
+
+        await coordinator.startIfNeeded()
+
+        guard case let .failed(message) = coordinator.state else {
+            Issue.record("Expected failed bootstrap state")
+            return
+        }
+
+        #expect(message == "Local seed data failed.")
+        #expect(!message.contains("SensitiveProbeError"))
+        #expect(!message.contains("secret-account"))
     }
 
     @Test func seedLoaderIsInvokedExactlyOnceForOneStartup() async {
@@ -163,5 +184,11 @@ private final class BootstrapProbe {
             recurringTransactions: 0
         )))
         continuation = nil
+    }
+}
+
+private struct SensitiveProbeError: Error, CustomStringConvertible {
+    var description: String {
+        "SensitiveProbeError(secret-account)"
     }
 }

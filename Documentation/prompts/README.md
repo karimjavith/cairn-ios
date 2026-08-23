@@ -97,3 +97,4 @@ Use one of:
 | [47-error-recovery-ux.md](47-error-recovery-ux.md) | completed |
 | [48-accessibility-audit.md](48-accessibility-audit.md) | completed |
 | [49-performance-concurrency-audit.md](49-performance-concurrency-audit.md) | completed |
+| [50-privacy-security-audit.md](50-privacy-security-audit.md) | completed |
