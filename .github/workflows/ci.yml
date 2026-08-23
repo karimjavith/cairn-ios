@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: macos-26
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+
+      - name: Verify environment
+        run: |
+          set -euo pipefail
+          xcode-select -p
+          xcodebuild -version
+          xcrun swift --version
+          xcrun simctl list runtimes available
+          xcrun simctl list devices available
+
+      - name: Check diff whitespace
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          zero_sha="0000000000000000000000000000000000000000"
+
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            git fetch --no-tags --depth=1 origin "${PR_BASE_SHA}"
+            range="${PR_BASE_SHA}..${PR_HEAD_SHA}"
+          elif [[ "${EVENT_NAME}" == "push" ]]; then
+            if [[ -n "${PUSH_BEFORE_SHA}" && "${PUSH_BEFORE_SHA}" != "${zero_sha}" ]]; then
+              git fetch --no-tags --depth=1 origin "${PUSH_BEFORE_SHA}"
+              range="${PUSH_BEFORE_SHA}..${CURRENT_SHA}"
+            elif git rev-parse "${CURRENT_SHA}^" >/dev/null 2>&1; then
+              range="${CURRENT_SHA}^..${CURRENT_SHA}"
+            else
+              empty_tree="$(git hash-object -t tree /dev/null)"
+              range="${empty_tree}..${CURRENT_SHA}"
+            fi
+          else
+            echo "Unsupported event for whitespace check: ${EVENT_NAME}"
+            exit 1
+          fi
+
+          echo "Checking whitespace in committed diff: ${range}"
+          git -c core.fsmonitor=false diff --check "${range}"
+
+      - name: Build app
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project App/Cairn.xcodeproj \
+            -scheme Cairn \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Select test simulator
+        id: simulator
+        run: |
+          set -euo pipefail
+          udid="$(
+            xcrun simctl list devices available --json | python3 -c '
+          import json
+          import sys
+
+          devices = json.load(sys.stdin)["devices"]
+          for runtime in sorted(devices.keys(), reverse=True):
+              for device in devices[runtime]:
+                  if device.get("isAvailable") and device.get("name", "").startswith("iPhone"):
+                      print(device["udid"])
+                      raise SystemExit(0)
+
+          raise SystemExit("No available iPhone simulator found")
+          '
+          )"
+          echo "udid=${udid}" >> "${GITHUB_OUTPUT}"
+          echo "Selected iPhone simulator: ${udid}"
+
+      - name: Run unit tests
+        run: |
+          set -euo pipefail
+          rm -rf TestResults
+          mkdir -p TestResults
+          xcodebuild \
+            -project App/Cairn.xcodeproj \
+            -scheme Cairn \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}' \
+            CODE_SIGNING_ALLOWED=NO \
+            -only-testing:CairnTests \
+            -resultBundlePath TestResults/CairnTests.xcresult \
+            test
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CairnTests-xcresult
+          path: TestResults/CairnTests.xcresult
+          if-no-files-found: ignore
+          retention-days: 5

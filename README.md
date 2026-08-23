@@ -87,6 +87,18 @@ xcodebuild \
   test
 ```
 
+## Continuous Integration
+
+GitHub Actions CI runs on pull requests and pushes to `main`.
+
+CI validates:
+
+- committed diff whitespace with `git diff --check`
+- generic iOS Simulator Debug build
+- `CairnTests` on an available concrete iPhone simulator
+
+Local seed data is not required. CI does not create or load `Local/SeedData/cairn-seed.json`.
+
 ## Engineering Documents
 
 - [Engineering Standards](Documentation/ENGINEERING.md)

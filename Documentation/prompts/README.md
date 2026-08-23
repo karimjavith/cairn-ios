@@ -98,3 +98,4 @@ Use one of:
 | [48-accessibility-audit.md](48-accessibility-audit.md) | completed |
 | [49-performance-concurrency-audit.md](49-performance-concurrency-audit.md) | completed |
 | [50-privacy-security-audit.md](50-privacy-security-audit.md) | completed |
+| [51-ci-github-workflow.md](51-ci-github-workflow.md) | completed |
