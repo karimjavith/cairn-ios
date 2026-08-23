@@ -97,6 +97,8 @@ The current repository-level structure is:
 
 ```text
 cairn-ios/
+├── .github/
+│   └── workflows/
 ├── App/
 │   ├── Cairn.xcodeproj
 │   ├── Cairn/
@@ -109,24 +111,23 @@ cairn-ios/
 
 Responsibilities:
 
+- `.github/` contains GitHub-specific automation, workflows, and repository configuration.
 - `App/` contains the Xcode project, application source, and test targets.
 - `Documentation/` contains product, engineering, and architecture documentation.
 - `AGENTS.md` contains operating instructions for AI coding agents.
 - `README.md` contains repository onboarding and validation guidance.
 
-Planned repository-level infrastructure:
+Optional repository-level infrastructure:
 
 ```text
 Scripts/
-.github/
 ```
 
-These directories should be introduced only when automation or repository configuration is actually needed.
+This directory should be introduced only when local automation or development tooling is actually needed.
 
 When introduced:
 
 - `Scripts/` should contain automation and local development tooling.
-- `.github/` should contain GitHub-specific automation, workflows, and repository configuration.
 
 ## Application Source Structure
 

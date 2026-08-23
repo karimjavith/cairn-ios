@@ -54,13 +54,16 @@ The repository is organized by responsibility.
 
 App/
 Documentation/
+.github/
 Scripts/
 
 The Xcode project lives under App/.
 
 Documentation belongs in Documentation/.
 
-Automation and tooling belong in Scripts/.
+GitHub Actions workflow configuration belongs in .github/.
+
+Local automation and tooling belong in Scripts/.
 
 ⸻
 

@@ -2,7 +2,7 @@
 
 Cairn is a local-first personal financial operating system for iOS.
 
-Current status: the engineering foundation is established. Feature development has not begun.
+Current status: the release-ready engineering foundation is in place, including local-first core finance features, SwiftData persistence, recovery UX, accessibility and privacy audits, and CI validation.
 
 ## Platform
 
@@ -33,6 +33,8 @@ open App/Cairn.xcodeproj
 
 ```text
 cairn-ios/
+├── .github/
+│   └── workflows/
 ├── App/
 │   ├── Cairn.xcodeproj
 │   ├── Cairn/
@@ -43,10 +45,9 @@ cairn-ios/
 └── README.md
 ```
 
-Planned but not yet created:
+Optional future local automation:
 
 - `Scripts/`
-- `.github/`
 
 ## Build
 

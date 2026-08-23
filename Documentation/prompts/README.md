@@ -99,3 +99,4 @@ Use one of:
 | [49-performance-concurrency-audit.md](49-performance-concurrency-audit.md) | completed |
 | [50-privacy-security-audit.md](50-privacy-security-audit.md) | completed |
 | [51-ci-github-workflow.md](51-ci-github-workflow.md) | completed |
+| [52-final-engineering-release-audit.md](52-final-engineering-release-audit.md) | completed |
