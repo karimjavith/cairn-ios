@@ -95,3 +95,4 @@ Use one of:
 | [45-local-seed-data-integration.md](45-local-seed-data-integration.md) | completed |
 | [46-persistence-migration-versioning.md](46-persistence-migration-versioning.md) | completed |
 | [47-error-recovery-ux.md](47-error-recovery-ux.md) | completed |
+| [48-accessibility-audit.md](48-accessibility-audit.md) | completed |

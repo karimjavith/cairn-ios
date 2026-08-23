@@ -17,6 +17,22 @@ enum BudgetMoneyFormatter {
             ?? "\(money.amount) \(money.currencyCode)"
     }
 
+    static func remainingStatusTitle(_ remaining: Money) -> String {
+        remaining.amount < 0 ? "Overspent" : "Remaining"
+    }
+
+    static func remainingStatusValue(_ remaining: Money) -> String {
+        let displayedMoney = remaining.amount < 0 ? -remaining : remaining
+
+        return currency(displayedMoney)
+    }
+
+    static func remainingStatusAccessibilityText(_ remaining: Money) -> String {
+        let status = remaining.amount < 0 ? "overspent by" : "remaining"
+
+        return "\(status) \(remainingStatusValue(remaining))"
+    }
+
     static func decimalText(_ decimal: Decimal, locale: Locale) -> String {
         let decimalText = NSDecimalNumber(decimal: decimal).stringValue
         let decimalSeparator = locale.decimalSeparator ?? "."

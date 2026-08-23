@@ -16,6 +16,16 @@ enum DashboardMoneyFormatter {
         return formatter.string(from: money.amount as NSDecimalNumber)
             ?? "\(money.amount) \(money.currencyCode)"
     }
+
+    static func remainingStatusTitle(_ remaining: Money) -> String {
+        remaining.amount < 0 ? "Overspent" : "Remaining"
+    }
+
+    static func remainingStatusValue(_ remaining: Money) -> String {
+        let displayedMoney = remaining.amount < 0 ? -remaining : remaining
+
+        return currency(displayedMoney)
+    }
 }
 
 enum DashboardDateFormatter {

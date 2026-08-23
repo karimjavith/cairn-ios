@@ -24,12 +24,15 @@ struct BudgetDetailView: View {
 
             Section("Progress") {
                 LabeledContent("Spent", value: BudgetMoneyFormatter.currency(progress.spent))
-                LabeledContent("Remaining", value: BudgetMoneyFormatter.currency(progress.remaining))
+                LabeledContent(
+                    BudgetMoneyFormatter.remainingStatusTitle(progress.remaining),
+                    value: BudgetMoneyFormatter.remainingStatusValue(progress.remaining)
+                )
             }
 
             Section {
-                Button("Delete Budget", role: .destructive, action: delete)
-                    .accessibilityLabel("Delete Budget")
+                Button("Delete \(categoryName) Budget", role: .destructive, action: delete)
+                    .accessibilityLabel("Delete \(categoryName) Budget")
             }
         }
         .navigationTitle("Budget")

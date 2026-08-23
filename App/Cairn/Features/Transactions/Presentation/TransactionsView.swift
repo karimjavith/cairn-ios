@@ -103,7 +103,7 @@ struct TransactionsView: View {
                 store.cancelDelete()
             }
         } message: { transaction in
-            Text("This cannot be undone.")
+            Text("This deletes \(deleteContext(for: transaction)). This cannot be undone.")
         }
         .navigationDestination(item: $store.route) { route in
             switch route {
@@ -149,7 +149,7 @@ struct TransactionsView: View {
                 } label: {
                     Label("Delete Transaction", systemImage: "trash")
                 }
-                .accessibilityLabel("Delete Transaction")
+                .accessibilityLabel("Delete \(deleteContext(for: transaction))")
             }
         }
     }
@@ -161,6 +161,10 @@ struct TransactionsView: View {
         let memo = transaction.memo.map { ", \($0)" } ?? ""
 
         return "\(transaction.direction.displayName), \(amount), \(accountName), \(categoryName), \(TransactionDateFormatter.dateTime(transaction.occurredAt))\(memo)"
+    }
+
+    private func deleteContext(for transaction: Transaction) -> String {
+        "\(transaction.direction.displayName.lowercased()) \(TransactionMoneyFormatter.currency(transaction.amount)) from \(store.accountName(for: transaction.accountID)) on \(TransactionDateFormatter.dateTime(transaction.occurredAt))"
     }
 }
 

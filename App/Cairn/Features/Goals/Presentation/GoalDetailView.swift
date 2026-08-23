@@ -31,8 +31,8 @@ struct GoalDetailView: View {
             }
 
             Section {
-                Button("Delete Goal", role: .destructive, action: delete)
-                    .accessibilityLabel("Delete Goal")
+                Button("Delete \(goal.name)", role: .destructive, action: delete)
+                    .accessibilityLabel("Delete \(goal.name)")
             }
         }
         .navigationTitle("Goal")

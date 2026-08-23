@@ -95,7 +95,7 @@ struct BudgetsView: View {
             ),
             presenting: store.pendingDeletion
         ) { budget in
-            Button("Delete Budget", role: .destructive) {
+            Button("Delete \(store.categoryName(for: budget.categoryID)) Budget", role: .destructive) {
                 Task {
                     await store.confirmDelete(budget)
                 }
@@ -104,7 +104,7 @@ struct BudgetsView: View {
                 store.cancelDelete()
             }
         } message: { budget in
-            Text("This cannot be undone.")
+            Text("This deletes the \(store.categoryName(for: budget.categoryID)) budget. This cannot be undone.")
         }
         .navigationDestination(item: $store.route) { route in
             switch route {
@@ -152,14 +152,14 @@ struct BudgetsView: View {
                     } label: {
                         Label("Delete Budget", systemImage: "trash")
                     }
-                    .accessibilityLabel("Delete Budget")
+                    .accessibilityLabel("Delete \(store.categoryName(for: budget.categoryID)) Budget")
                 }
             }
         }
     }
 
     private func accessibilityLabel(for budget: Budget, progress: BudgetProgress) -> String {
-        "\(store.categoryName(for: budget.categoryID)), limit \(BudgetMoneyFormatter.currency(budget.limit)), spent \(BudgetMoneyFormatter.currency(progress.spent)), remaining \(BudgetMoneyFormatter.currency(progress.remaining)), \(BudgetDateFormatter.period(budget.period))"
+        "\(store.categoryName(for: budget.categoryID)), limit \(BudgetMoneyFormatter.currency(budget.limit)), spent \(BudgetMoneyFormatter.currency(progress.spent)), \(BudgetMoneyFormatter.remainingStatusAccessibilityText(progress.remaining)), \(BudgetDateFormatter.period(budget.period))"
     }
 }
 
@@ -188,7 +188,10 @@ private struct BudgetRowView: View {
 
             LabeledContent("Spent", value: BudgetMoneyFormatter.currency(progress.spent))
                 .font(.footnote)
-            LabeledContent("Remaining", value: BudgetMoneyFormatter.currency(progress.remaining))
+            LabeledContent(
+                BudgetMoneyFormatter.remainingStatusTitle(progress.remaining),
+                value: BudgetMoneyFormatter.remainingStatusValue(progress.remaining)
+            )
                 .font(.footnote)
         }
         .contentShape(Rectangle())

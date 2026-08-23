@@ -102,7 +102,7 @@ struct RecurringTransactionsView: View {
                 store.cancelDelete()
             }
         } message: { recurringTransaction in
-            Text("This cannot be undone.")
+            Text("This deletes \(deleteContext(for: recurringTransaction)). This cannot be undone.")
         }
         .navigationDestination(item: $store.route) { route in
             switch route {
@@ -148,7 +148,7 @@ struct RecurringTransactionsView: View {
                 } label: {
                     Label("Delete Recurring Transaction", systemImage: "trash")
                 }
-                .accessibilityLabel("Delete Recurring Transaction")
+                .accessibilityLabel("Delete \(deleteContext(for: recurringTransaction))")
             }
         }
     }
@@ -161,6 +161,10 @@ struct RecurringTransactionsView: View {
         let memo = recurringTransaction.memo.map { ", \($0)" } ?? ""
 
         return "\(recurringTransaction.direction.displayName), \(amount), \(accountName), \(recurringTransaction.frequency.displayName), next occurrence \(nextOccurrenceText)\(memo)"
+    }
+
+    private func deleteContext(for recurringTransaction: RecurringTransaction) -> String {
+        "\(recurringTransaction.frequency.displayName.lowercased()) \(recurringTransaction.direction.displayName.lowercased()) \(RecurringTransactionMoneyFormatter.currency(recurringTransaction.amount)) for \(store.accountName(for: recurringTransaction.accountID))"
     }
 }
 

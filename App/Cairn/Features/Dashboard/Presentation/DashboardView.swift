@@ -182,7 +182,10 @@ struct DashboardView: View {
                                 .font(.body)
                             LabeledContent("Limit", value: DashboardMoneyFormatter.currency(status.progress.budget.limit))
                             LabeledContent("Spent", value: DashboardMoneyFormatter.currency(status.progress.spent))
-                            LabeledContent("Remaining", value: DashboardMoneyFormatter.currency(status.progress.remaining))
+                            LabeledContent(
+                                DashboardMoneyFormatter.remainingStatusTitle(status.progress.remaining),
+                                value: DashboardMoneyFormatter.remainingStatusValue(status.progress.remaining)
+                            )
                         }
                         .accessibilityElement(children: .combine)
                     }

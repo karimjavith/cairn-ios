@@ -93,7 +93,7 @@ struct GoalsView: View {
             ),
             presenting: store.pendingDeletion
         ) { goal in
-            Button("Delete Goal", role: .destructive) {
+            Button("Delete \(goal.name)", role: .destructive) {
                 Task {
                     await store.confirmDelete(goal)
                 }
@@ -102,7 +102,7 @@ struct GoalsView: View {
                 store.cancelDelete()
             }
         } message: { goal in
-            Text("This cannot be undone.")
+            Text("This deletes \(goal.name). This cannot be undone.")
         }
         .navigationDestination(item: $store.route) { route in
             switch route {
@@ -145,7 +145,7 @@ struct GoalsView: View {
                     } label: {
                         Label("Delete Goal", systemImage: "trash")
                     }
-                    .accessibilityLabel("Delete Goal")
+                    .accessibilityLabel("Delete \(goal.name)")
                 }
             }
         }

@@ -38,7 +38,7 @@ struct TransactionDetailView: View {
 
             Section {
                 Button("Delete Transaction", role: .destructive, action: delete)
-                    .accessibilityLabel("Delete Transaction")
+                    .accessibilityLabel("Delete \(transaction.direction.displayName.lowercased()) \(TransactionMoneyFormatter.currency(transaction.amount)) from \(accountName) on \(TransactionDateFormatter.dateTime(transaction.occurredAt))")
             }
         }
         .navigationTitle("Transaction")

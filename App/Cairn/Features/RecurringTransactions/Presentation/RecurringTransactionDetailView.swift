@@ -50,7 +50,7 @@ struct RecurringTransactionDetailView: View {
 
             Section {
                 Button("Delete Recurring Transaction", role: .destructive, action: delete)
-                    .accessibilityLabel("Delete Recurring Transaction")
+                    .accessibilityLabel("Delete \(recurringTransaction.frequency.displayName.lowercased()) \(recurringTransaction.direction.displayName.lowercased()) \(RecurringTransactionMoneyFormatter.currency(recurringTransaction.amount)) for \(accountName)")
             }
         }
         .navigationTitle("Recurring Transaction")
