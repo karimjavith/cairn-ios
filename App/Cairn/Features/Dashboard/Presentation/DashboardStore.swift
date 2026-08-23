@@ -83,21 +83,37 @@ final class DashboardStore {
         do {
             let referenceDate = now()
             let period = try currentMonthPeriod(containing: referenceDate)
-            let accounts = try await accountRepository.fetchAccounts()
-            let budgets = try await budgetRepository.fetchBudgets()
-            let goals = try await goalRepository.fetchGoals()
-            let categories = try await categoryRepository.fetchCategories()
+            async let accountsTask = accountRepository.fetchAccounts()
+            async let budgetsTask = budgetRepository.fetchBudgets()
+            async let goalsTask = goalRepository.fetchGoals()
+            async let categoriesTask = categoryRepository.fetchCategories()
+            async let transactionsTask = transactionRepository.fetchTransactions(
+                occurredFrom: period.start,
+                occurredBefore: period.end
+            )
+            let (accounts, budgets, goals, categories, transactions) = try await (
+                accountsTask,
+                budgetsTask,
+                goalsTask,
+                categoriesTask,
+                transactionsTask
+            )
             let categoryNamesByID = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0.name) })
 
             let accountBalances = try await loadAccountBalances(accounts)
             let currencyTotals = try totalsByCurrency(accountBalances)
-            let cashFlowSummaries = try await loadCashFlowSummaries(
+            async let cashFlowSummariesTask = loadCashFlowSummaries(
                 period: period,
                 currencyCodes: currencyTotals.map(\.currencyCode)
             )
-            let transactions = try await transactionRepository.fetchTransactions(
-                occurredFrom: period.start,
-                occurredBefore: period.end
+            async let budgetProgressTask = loadBudgetProgress(
+                budgets,
+                categoryNamesByID: categoryNamesByID
+            )
+            let goalProgress = try loadGoalProgress(goals)
+            let (cashFlowSummaries, budgetProgress) = try await (
+                cashFlowSummariesTask,
+                budgetProgressTask
             )
             let recentTransactions = transactions.prefix(recentTransactionLimit).map { transaction in
                 DashboardRecentTransaction(
@@ -105,11 +121,6 @@ final class DashboardStore {
                     accountName: accountName(for: transaction.accountID, accounts: accounts)
                 )
             }
-            let budgetProgress = try await loadBudgetProgress(
-                budgets,
-                categoryNamesByID: categoryNamesByID
-            )
-            let goalProgress = try loadGoalProgress(goals)
 
             snapshot = DashboardSnapshot(
                 accountBalances: accountBalances,
