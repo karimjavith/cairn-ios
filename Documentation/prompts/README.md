@@ -101,3 +101,4 @@ Use one of:
 | [51-ci-github-workflow.md](51-ci-github-workflow.md) | completed |
 | [52-final-engineering-release-audit.md](52-final-engineering-release-audit.md) | completed |
 | [53-product-visual-system.md](53-product-visual-system.md) | completed |
+| [54-dashboard-redesign.md](54-dashboard-redesign.md) | in-progress |

@@ -49,7 +49,7 @@ struct CairnEmptyStateView: View {
 
             if let actionLabel, let action {
                 Button(actionLabel, action: action)
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(CairnPrimaryButtonStyle())
                     .controlSize(.regular)
             }
         }

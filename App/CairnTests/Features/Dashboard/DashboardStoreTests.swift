@@ -55,6 +55,100 @@ struct DashboardStoreTests {
         #expect(snapshot.singleCurrencyNetWorth == nil)
     }
 
+    @Test func emptyDashboardDoesNotCreateHeroOrFakeZeroNetWorth() async throws {
+        let store = makeStore()
+
+        await store.loadDashboard()
+
+        let snapshot = try #require(store.snapshot)
+        #expect(snapshot.singleCurrencyNetWorth == nil)
+        #expect(DashboardHeroPresentation.make(snapshot: snapshot) == nil)
+        #expect(store.hasLoadedEmptyDashboard)
+    }
+
+    @Test func noAccountDashboardWithBudgetUsesAccountFirstCashFlowPrompt() async throws {
+        let budget = try makeBudget()
+        let store = makeStore(
+            budgetRepository: DashboardFeatureBudgetRepository(budgets: [budget])
+        )
+
+        await store.loadDashboard()
+
+        let snapshot = try #require(store.snapshot)
+        let prompt = try #require(DashboardCashFlowEmptyPromptPresentation.make(snapshot: snapshot))
+        #expect(store.hasLoadedEmptyDashboard == false)
+        #expect(snapshot.accountBalances.isEmpty)
+        #expect(snapshot.cashFlowSummaries.isEmpty)
+        #expect(prompt.title == "Add an account first")
+        #expect(prompt.message == "Cash flow needs an account currency before activity can be tracked.")
+        #expect(prompt.buttonTitle == "Add account")
+        #expect(prompt.action == .addAccount)
+        #expect(prompt.message.localizedCaseInsensitiveContains("balance is set") == false)
+        #expect(prompt.message.localizedCaseInsensitiveContains("transaction") == false)
+        #expect(prompt.buttonTitle.localizedCaseInsensitiveContains("transaction") == false)
+    }
+
+    @Test func accountDashboardWithoutCashFlowActivityUsesTransactionPromptWithoutFakeBalanceCopy() async throws {
+        let account = try makeAccount(currencyCode: "GBP")
+        let store = makeStore(
+            accountRepository: DashboardFeatureAccountRepository(accounts: [account]),
+            accountBalanceProvider: DashboardFeatureAccountBalanceProvider(balances: [
+                account.id: try money(100, "GBP")
+            ])
+        )
+
+        await store.loadDashboard()
+
+        let snapshot = try #require(store.snapshot)
+        let prompt = try #require(DashboardCashFlowEmptyPromptPresentation.make(snapshot: snapshot))
+        #expect(prompt.title == "Ready for activity")
+        #expect(prompt.message == "Record income or spending to see monthly cash flow here.")
+        #expect(prompt.buttonTitle == "Open transactions")
+        #expect(prompt.action == .openTransactions)
+        #expect(prompt.message.localizedCaseInsensitiveContains("balance is set") == false)
+    }
+
+    @Test func singleCurrencyHeroUsesTruthfulNetWorth() async throws {
+        let account = try makeAccount(currencyCode: "GBP")
+        let store = makeStore(
+            accountRepository: DashboardFeatureAccountRepository(accounts: [account]),
+            accountBalanceProvider: DashboardFeatureAccountBalanceProvider(balances: [
+                account.id: try money(250, "GBP")
+            ])
+        )
+
+        await store.loadDashboard()
+
+        let snapshot = try #require(store.snapshot)
+        let hero = try #require(DashboardHeroPresentation.make(snapshot: snapshot))
+        #expect(hero.title == "Net worth")
+        #expect(hero.kind == .singleCurrencyNetWorth(try money(250, "GBP")))
+        #expect(hero.accessibilityLabel.contains("Net worth"))
+    }
+
+    @Test func mixedCurrencyHeroKeepsTotalsSeparated() async throws {
+        let gbpAccount = try makeAccount(currencyCode: "GBP")
+        let eurAccount = try makeAccount(currencyCode: "EUR")
+        let store = makeStore(
+            accountRepository: DashboardFeatureAccountRepository(accounts: [gbpAccount, eurAccount]),
+            accountBalanceProvider: DashboardFeatureAccountBalanceProvider(balances: [
+                gbpAccount.id: try money(100, "GBP"),
+                eurAccount.id: try money(80, "EUR")
+            ])
+        )
+
+        await store.loadDashboard()
+
+        let snapshot = try #require(store.snapshot)
+        let hero = try #require(DashboardHeroPresentation.make(snapshot: snapshot))
+        #expect(hero.title == "Balances")
+        #expect(hero.kind == .currencyTotals([
+            DashboardCurrencyTotal(currencyCode: "EUR", total: try money(80, "EUR")),
+            DashboardCurrencyTotal(currencyCode: "GBP", total: try money(100, "GBP"))
+        ]))
+        #expect(hero.accessibilityLabel.contains("does not convert currencies"))
+    }
+
     @Test func accountBalanceFailureSurfaces() async throws {
         let account = try makeAccount()
         let store = makeStore(
@@ -159,6 +253,24 @@ struct DashboardStoreTests {
         #expect(budgetProvider.requestedBudgetIDs == [first.id, second.id])
     }
 
+    @Test func budgetSectionPresentationIncludesEveryBudgetInSnapshotOrder() async throws {
+        let groceries = try makeCategory(name: "Groceries")
+        let travel = try makeCategory(name: "Travel")
+        let first = try makeBudget(categoryID: groceries.id)
+        let second = try makeBudget(categoryID: travel.id)
+        let store = makeStore(
+            budgetRepository: DashboardFeatureBudgetRepository(budgets: [first, second]),
+            categoryRepository: DashboardFeatureCategoryRepository(categories: [groceries, travel])
+        )
+
+        await store.loadDashboard()
+
+        let snapshot = try #require(store.snapshot)
+        let items = DashboardProgressSectionPresentation.budgetItems(snapshot: snapshot)
+        #expect(items.map(\.id) == [first.id, second.id])
+        #expect(items.map(\.presentation.title) == ["Groceries", "Travel"])
+    }
+
     @Test func budgetProgressFailureSurfaces() async throws {
         let budget = try makeBudget()
         let store = makeStore(
@@ -187,6 +299,21 @@ struct DashboardStoreTests {
         #expect(snapshot.goalProgress.map(\.progress.goal) == [completed, inProgress])
         #expect(snapshot.goalProgress.map(\.progress.isCompleted) == [true, false])
         #expect(goalProvider.requestedGoalIDs == [completed.id, inProgress.id])
+    }
+
+    @Test func goalSectionPresentationIncludesEveryGoalInSnapshotOrder() async throws {
+        let completed = try makeGoal(name: "Completed", target: 100, current: 100)
+        let inProgress = try makeGoal(name: "In Progress", target: 100, current: 40)
+        let store = makeStore(
+            goalRepository: DashboardFeatureGoalRepository(goals: [completed, inProgress])
+        )
+
+        await store.loadDashboard()
+
+        let snapshot = try #require(store.snapshot)
+        let items = DashboardProgressSectionPresentation.goalItems(snapshot: snapshot)
+        #expect(items.map(\.id) == [completed.id, inProgress.id])
+        #expect(items.map(\.presentation.title) == ["Completed", "In Progress"])
     }
 
     @Test func goalProgressFailureSurfaces() async throws {

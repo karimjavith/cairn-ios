@@ -9,12 +9,16 @@ import SwiftUI
 
 struct AccountsView: View {
     @State private var store: AccountsStore
+    @State private var handledCreateAccountRequest: UUID?
+    let createAccountRequest: UUID?
 
     init(
         accountRepository: any AccountRepository,
         transactionRepository: any TransactionRepository,
-        calculateAccountBalance: CalculateAccountBalance
+        calculateAccountBalance: CalculateAccountBalance,
+        createAccountRequest: UUID? = nil
     ) {
+        self.createAccountRequest = createAccountRequest
         _store = State(wrappedValue: AccountsStore(
             accountRepository: accountRepository,
             transactionRepository: transactionRepository,
@@ -125,6 +129,21 @@ struct AccountsView: View {
         .task {
             await store.loadAccounts()
         }
+        .onAppear {
+            handleCreateAccountRequest(createAccountRequest)
+        }
+        .onChange(of: createAccountRequest) { _, request in
+            handleCreateAccountRequest(request)
+        }
+    }
+
+    private func handleCreateAccountRequest(_ request: UUID?) {
+        guard let request, handledCreateAccountRequest != request else {
+            return
+        }
+
+        handledCreateAccountRequest = request
+        store.startCreateAccount()
     }
 
     private var accountList: some View {

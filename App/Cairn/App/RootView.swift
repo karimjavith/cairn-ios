@@ -9,9 +9,11 @@ import SwiftUI
 
 struct RootView: View {
     let dependencies: AppDependencies
+    @State private var selectedTab: AppTab = .dashboard
+    @State private var accountCreationRequest: UUID?
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             ForEach(AppTab.allCases) { tab in
                 NavigationStack {
                     destination(for: tab)
@@ -23,6 +25,7 @@ struct RootView: View {
                 .accessibilityLabel(tab.title)
             }
         }
+        .tint(CairnColor.plum)
     }
 
     @ViewBuilder
@@ -39,13 +42,19 @@ struct RootView: View {
                 calculateBudgetProgress: dependencies.calculateBudgetProgress,
                 calculateGoalProgress: dependencies.calculateGoalProgress,
                 calculateCashFlowSummary: dependencies.calculateCashFlowSummary,
-                calendar: dependencies.dashboardCalendar
+                calendar: dependencies.dashboardCalendar,
+                selectTab: { selectedTab = $0 },
+                startAccountCreation: {
+                    selectedTab = .accounts
+                    accountCreationRequest = UUID()
+                }
             )
         case .accounts:
             AccountsView(
                 accountRepository: dependencies.accountRepository,
                 transactionRepository: dependencies.transactionRepository,
-                calculateAccountBalance: dependencies.calculateAccountBalance
+                calculateAccountBalance: dependencies.calculateAccountBalance,
+                createAccountRequest: accountCreationRequest
             )
         case .transactions:
             TransactionsView(

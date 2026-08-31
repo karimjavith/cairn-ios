@@ -111,6 +111,7 @@ struct CairnProgressSummaryView: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(presentation.title)
                     .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(CairnColor.textPrimary)
 
                 Spacer(minLength: CairnSpacing.medium)
 
@@ -118,6 +119,7 @@ struct CairnProgressSummaryView: View {
                     .font(.subheadline.weight(.semibold))
                     .monospacedDigit()
                     .multilineTextAlignment(.trailing)
+                    .foregroundStyle(valueColor)
             }
 
             ProgressView(value: presentation.visibleFraction)
@@ -125,7 +127,7 @@ struct CairnProgressSummaryView: View {
 
             Text(presentation.detailText)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(CairnColor.textSecondary)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(presentation.accessibilityLabel)
@@ -134,11 +136,22 @@ struct CairnProgressSummaryView: View {
     private var tint: Color {
         switch presentation.status {
         case .inProgress:
-            .accentColor
+            CairnColor.plum
         case .complete:
-            .green
+            CairnColor.positive
         case .overspent:
-            .orange
+            CairnColor.warning
+        }
+    }
+
+    private var valueColor: Color {
+        switch presentation.status {
+        case .inProgress:
+            CairnColor.textPrimary
+        case .complete:
+            CairnColor.positive
+        case .overspent:
+            CairnColor.negative
         }
     }
 }

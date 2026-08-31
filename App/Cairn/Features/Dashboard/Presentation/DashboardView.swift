@@ -10,6 +10,12 @@ import SwiftUI
 
 struct DashboardView: View {
     @State private var store: DashboardStore
+    @ScaledMetric(relativeTo: .largeTitle) private var emptyHeroSize: CGFloat = 40
+    @ScaledMetric(relativeTo: .largeTitle) private var financialHeroSize: CGFloat = 42
+    private let selectTab: (AppTab) -> Void
+    private let startAccountCreation: () -> Void
+    private static let pageMargin: CGFloat = 24
+    private static let bottomScrollClearance: CGFloat = 72
 
     init(
         accountRepository: any AccountRepository,
@@ -21,8 +27,12 @@ struct DashboardView: View {
         calculateBudgetProgress: CalculateBudgetProgress,
         calculateGoalProgress: CalculateGoalProgress,
         calculateCashFlowSummary: CalculateCashFlowSummary,
-        calendar: Calendar
+        calendar: Calendar,
+        selectTab: @escaping (AppTab) -> Void = { _ in },
+        startAccountCreation: @escaping () -> Void = {}
     ) {
+        self.selectTab = selectTab
+        self.startAccountCreation = startAccountCreation
         _store = State(wrappedValue: DashboardStore(
             accountRepository: accountRepository,
             budgetRepository: budgetRepository,
@@ -50,214 +60,575 @@ struct DashboardView: View {
     }
 
     var body: some View {
-        Group {
-            if store.isLoading {
-                ProgressView("Loading dashboard")
-            } else if let errorMessage = store.errorMessage {
-                LoadFailureView(
-                    title: "Dashboard Unavailable",
-                    message: errorMessage,
-                    retry: {
-                        Task {
-                            await store.loadDashboard()
-                        }
-                    }
-                )
-            } else if let snapshot = store.snapshot {
-                dashboardContent(snapshot)
-            } else {
-                ProgressView("Loading dashboard")
+        ZStack {
+            CairnColor.canvas
+                .ignoresSafeArea()
+
+            Group {
+                if store.isLoading {
+                    loadingView
+                } else if let errorMessage = store.errorMessage {
+                    dashboardError(message: errorMessage)
+                } else if let snapshot = store.snapshot {
+                    dashboardContent(snapshot)
+                } else {
+                    loadingView
+                }
             }
         }
         .navigationTitle("Dashboard")
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             await store.loadDashboard()
         }
     }
 
-    private func dashboardContent(_ snapshot: DashboardSnapshot) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                if store.hasLoadedEmptyDashboard {
-                    ContentUnavailableView(
-                        "No Dashboard Data",
-                        systemImage: "gauge",
-                        description: Text("Add accounts, transactions, budgets, or goals to build your overview.")
-                    )
-                }
+    private var loadingView: some View {
+        ProgressView("Loading dashboard")
+            .tint(CairnColor.plum)
+            .foregroundStyle(CairnColor.textSecondary)
+    }
 
-                accountsSection(snapshot)
-                cashFlowSection(snapshot)
-                budgetsSection(snapshot)
-                goalsSection(snapshot)
-                recentTransactionsSection(snapshot)
+    private func dashboardError(message: String) -> some View {
+        VStack(spacing: CairnSpacing.large) {
+            LoadFailureView(
+                title: "Dashboard Unavailable",
+                message: message,
+                retry: {
+                    Task {
+                        await store.loadDashboard()
+                    }
+                }
+            )
+        }
+        .padding(CairnSpacing.large)
+    }
+
+    private func dashboardContent(_ snapshot: DashboardSnapshot) -> some View {
+        GeometryReader { proxy in
+            ScrollView {
+                if store.hasLoadedEmptyDashboard {
+                    emptyDashboard
+                        .frame(minHeight: proxy.size.height, alignment: .top)
+                } else {
+                    loadedDashboard(snapshot)
+                }
             }
-            .padding()
+            .safeAreaInset(edge: .bottom) {
+                Color.clear
+                    .frame(height: Self.bottomScrollClearance)
+            }
+            .scrollContentBackground(.hidden)
         }
     }
 
-    private func accountsSection(_ snapshot: DashboardSnapshot) -> some View {
-        GroupBox("Accounts") {
-            VStack(alignment: .leading, spacing: 12) {
-                if let netWorth = snapshot.singleCurrencyNetWorth {
-                    LabeledContent("Net Worth", value: DashboardMoneyFormatter.currency(netWorth))
-                } else if snapshot.currencyTotals.count > 1 {
-                    Text("Net worth is shown by currency because Cairn does not convert currencies.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
+    private var emptyDashboard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            CairnLogoMark(scale: .compact)
+                .padding(.top, CairnSpacing.medium)
 
-                if snapshot.currencyTotals.isEmpty {
-                    Text("No accounts yet.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(snapshot.currencyTotals, id: \.currencyCode) { total in
-                        LabeledContent(
-                            "\(total.currencyCode) Total",
-                            value: DashboardMoneyFormatter.currency(total.total)
-                        )
-                    }
-                }
+            VStack(alignment: .leading, spacing: CairnSpacing.medium) {
+                Text("Your money,\nin one place.")
+                    .font(.system(size: emptyHeroSize, weight: .semibold, design: .serif))
+                    .lineSpacing(-1)
+                    .foregroundStyle(CairnColor.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.84)
+                    .accessibilityAddTraits(.isHeader)
 
-                Divider()
+                Capsule()
+                    .fill(CairnColor.plum)
+                    .frame(width: 44, height: 3)
+                    .accessibilityHidden(true)
 
-                if snapshot.accountBalances.isEmpty {
-                    Text("Account balances will appear here.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(snapshot.accountBalances, id: \.account.id) { accountBalance in
-                        VStack(alignment: .leading, spacing: 2) {
-                            LabeledContent(
-                                accountBalance.account.name,
-                                value: DashboardMoneyFormatter.currency(accountBalance.balance)
-                            )
-                            Text(accountBalance.account.type.displayName)
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
-                        .accessibilityElement(children: .combine)
-                    }
-                }
+                Text("Add your first account to see your balances, track spending, and reach your goals.")
+                    .font(.body)
+                    .lineSpacing(2)
+                    .foregroundStyle(CairnColor.textSecondary)
+                    .frame(maxWidth: 320, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .padding(.top, 34)
+
+            Spacer(minLength: CairnSpacing.large)
+
+            DashboardFirstRunArtwork()
+                .accessibilityHidden(true)
+                .frame(maxWidth: .infinity)
+
+            Spacer(minLength: CairnSpacing.large)
+
+            VStack(alignment: .center, spacing: CairnSpacing.medium) {
+                Button {
+                    startAccountCreation()
+                } label: {
+                    HStack(spacing: CairnSpacing.small) {
+                        Text("Add account")
+                        Image(systemName: "arrow.right")
+                            .font(.body.weight(.semibold))
+                            .accessibilityHidden(true)
+                    }
+                }
+                .buttonStyle(CairnPrimaryButtonStyle())
+
+                HStack(spacing: CairnSpacing.extraSmall) {
+                    Image(systemName: "lock")
+                        .font(.footnote.weight(.medium))
+                    Text("Your data stays on this device.")
+                        .font(.footnote)
+                }
+                .foregroundStyle(CairnColor.textSecondary)
+                .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(.horizontal, Self.pageMargin)
+        .padding(.bottom, CairnSpacing.large)
+    }
+
+    private func loadedDashboard(_ snapshot: DashboardSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 24) {
+            CairnLogoMark(scale: .compact)
+                .padding(.top, CairnSpacing.large)
+
+            loadedHero(snapshot)
+            cashFlowSection(snapshot)
+
+            if snapshot.budgetProgress.isEmpty == false {
+                budgetsSection(snapshot)
+            }
+
+            if snapshot.recentTransactions.isEmpty == false || hasCashFlowActivity(snapshot) {
+                recentTransactionsSection(snapshot)
+            }
+
+            if snapshot.goalProgress.isEmpty == false {
+                goalsSection(snapshot)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, Self.pageMargin)
+        .padding(.bottom, CairnSpacing.section)
+    }
+
+    @ViewBuilder
+    private func loadedHero(_ snapshot: DashboardSnapshot) -> some View {
+        if let hero = DashboardHeroPresentation.make(snapshot: snapshot) {
+            VStack(alignment: .leading, spacing: CairnSpacing.medium) {
+                Text(hero.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(CairnColor.plum)
+
+                switch hero.kind {
+                case let .singleCurrencyNetWorth(netWorth):
+                    Text(CairnMoneyPresentation.currency(netWorth))
+                        .font(.system(size: financialHeroSize, weight: .semibold))
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                        .foregroundStyle(CairnColor.textPrimary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                case let .currencyTotals(totals):
+                    VStack(alignment: .leading, spacing: CairnSpacing.medium) {
+                        ForEach(totals, id: \.currencyCode) { total in
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(total.currencyCode)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(CairnColor.textSecondary)
+
+                                Spacer(minLength: CairnSpacing.large)
+
+                                Text(CairnMoneyPresentation.currency(total.total))
+                                    .cairnRowAmount()
+                                    .foregroundStyle(CairnColor.textPrimary)
+                            }
+                            .accessibilityElement(children: .combine)
+                        }
+                    }
+                }
+
+                Text(hero.subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(CairnColor.textSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, CairnSpacing.medium)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(hero.accessibilityLabel)
         }
     }
 
     private func cashFlowSection(_ snapshot: DashboardSnapshot) -> some View {
-        GroupBox("Cash Flow") {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(DashboardDateFormatter.period(snapshot.cashFlowPeriod))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: CairnSpacing.medium) {
+            DashboardSectionTitle(
+                title: "This month",
+                subtitle: DashboardDateFormatter.period(snapshot.cashFlowPeriod)
+            )
 
-                if snapshot.cashFlowSummaries.isEmpty {
-                    Text("Cash flow appears after an account currency is available.")
-                        .foregroundStyle(.secondary)
-                } else {
+            if let prompt = DashboardCashFlowEmptyPromptPresentation.make(snapshot: snapshot) {
+                cashFlowEmptyPrompt(prompt)
+            } else if snapshot.cashFlowSummaries.count == 1, let cashFlow = snapshot.cashFlowSummaries.first {
+                singleCurrencyCashFlowSummary(cashFlow.summary)
+            } else {
+                VStack(alignment: .leading, spacing: CairnSpacing.large) {
                     ForEach(snapshot.cashFlowSummaries, id: \.summary.totalInflows.currencyCode) { cashFlow in
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(cashFlow.summary.totalInflows.currencyCode)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                            LabeledContent("Inflows", value: DashboardMoneyFormatter.currency(cashFlow.summary.totalInflows))
-                            LabeledContent("Outflows", value: DashboardMoneyFormatter.currency(cashFlow.summary.totalOutflows))
-                            LabeledContent("Net", value: DashboardMoneyFormatter.currency(cashFlow.summary.netCashFlow))
-                        }
-                        .accessibilityElement(children: .combine)
+                        multiCurrencyCashFlowSummary(cashFlow.summary)
                     }
                 }
             }
+        }
+    }
+
+    private func cashFlowEmptyPrompt(_ prompt: DashboardCashFlowEmptyPromptPresentation) -> some View {
+        VStack(alignment: .leading, spacing: CairnSpacing.medium) {
+            Text(prompt.title)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(CairnColor.textPrimary)
+
+            Text(prompt.message)
+                .font(.subheadline)
+                .foregroundStyle(CairnColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button(prompt.buttonTitle) {
+                switch prompt.action {
+                case .addAccount:
+                    startAccountCreation()
+                case .openTransactions:
+                    selectTab(.transactions)
+                }
+            }
+            .buttonStyle(CairnSecondaryButtonStyle())
+        }
+        .padding(CairnSpacing.large)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(CairnColor.lavenderSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    private func singleCurrencyCashFlowSummary(_ summary: CashFlowSummary) -> some View {
+        VStack(alignment: .leading, spacing: CairnSpacing.medium) {
+            HStack(alignment: .top, spacing: CairnSpacing.large) {
+                cashFlowMetric(
+                    title: "Income",
+                    value: summary.totalInflows,
+                    accessibilityStatus: "Money in",
+                    color: CairnColor.positive
+                )
+
+                cashFlowMetric(
+                    title: "Spending",
+                    value: summary.totalOutflows,
+                    accessibilityStatus: "Money out",
+                    color: CairnColor.negative
+                )
+
+                cashFlowMetric(
+                    title: "Net",
+                    value: summary.netCashFlow,
+                    accessibilityStatus: cashFlowNetStatus(summary.netCashFlow),
+                    color: semanticColor(for: summary.netCashFlow)
+                )
+            }
+        }
+    }
+
+    private func multiCurrencyCashFlowSummary(_ summary: CashFlowSummary) -> some View {
+        VStack(alignment: .leading, spacing: CairnSpacing.small) {
+            Text(summary.totalInflows.currencyCode)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(CairnColor.textPrimary)
+
+            VStack(alignment: .leading, spacing: CairnSpacing.extraSmall) {
+                cashFlowRow(
+                    title: "Income",
+                    value: summary.totalInflows,
+                    accessibilityStatus: "Money in",
+                    color: CairnColor.positive
+                )
+
+                cashFlowRow(
+                    title: "Spending",
+                    value: summary.totalOutflows,
+                    accessibilityStatus: "Money out",
+                    color: CairnColor.negative
+                )
+
+                cashFlowRow(
+                    title: "Net",
+                    value: summary.netCashFlow,
+                    accessibilityStatus: cashFlowNetStatus(summary.netCashFlow),
+                    color: semanticColor(for: summary.netCashFlow)
+                )
+            }
+        }
+        .padding(.vertical, CairnSpacing.extraSmall)
+    }
+
+    private func cashFlowMetric(
+        title: String,
+        value: Money,
+        accessibilityStatus: String,
+        color: Color
+    ) -> some View {
+        VStack(alignment: .leading, spacing: CairnSpacing.extraSmall) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(CairnColor.textSecondary)
+
+            Text(CairnMoneyPresentation.currency(value))
+                .font(.headline.weight(.semibold))
+                .monospacedDigit()
+                .lineLimit(2)
+                .minimumScaleFactor(0.82)
+                .foregroundStyle(color)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title), \(CairnMoneyPresentation.currency(value)), \(accessibilityStatus)")
+    }
+
+    private func cashFlowRow(
+        title: String,
+        value: Money,
+        accessibilityStatus: String,
+        color: Color
+    ) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: CairnSpacing.medium) {
+            Text(title)
+                .font(.subheadline)
+                .foregroundStyle(CairnColor.textSecondary)
+
+            Spacer(minLength: CairnSpacing.large)
+
+            Text(CairnMoneyPresentation.currency(value))
+                .cairnRowAmount()
+                .foregroundStyle(color)
+                .frame(maxWidth: 150, alignment: .trailing)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title), \(CairnMoneyPresentation.currency(value)), \(accessibilityStatus)")
+    }
+
+    private func cashFlowNetStatus(_ money: Money) -> String {
+        if money.amount > 0 {
+            return "Net positive"
+        }
+
+        if money.amount < 0 {
+            return "Net negative"
+        }
+
+        return "No net change"
+    }
+
+    private func semanticColor(for money: Money) -> Color {
+        if money.amount > 0 {
+            return CairnColor.positive
+        }
+
+        if money.amount < 0 {
+            return CairnColor.negative
+        }
+
+        return CairnColor.neutral
+    }
+
+    private func hasCashFlowActivity(_ snapshot: DashboardSnapshot) -> Bool {
+        snapshot.cashFlowSummaries.contains { cashFlow in
+            cashFlow.summary.totalInflows.amount != 0
+                || cashFlow.summary.totalOutflows.amount != 0
+                || cashFlow.summary.netCashFlow.amount != 0
         }
     }
 
     private func budgetsSection(_ snapshot: DashboardSnapshot) -> some View {
-        GroupBox("Budgets") {
-            VStack(alignment: .leading, spacing: 12) {
-                if snapshot.budgetProgress.isEmpty {
-                    Text("No budgets yet.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(snapshot.budgetProgress, id: \.progress.budget.id) { status in
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(status.categoryName)
-                                .font(.body)
-                            LabeledContent("Limit", value: DashboardMoneyFormatter.currency(status.progress.budget.limit))
-                            LabeledContent("Spent", value: DashboardMoneyFormatter.currency(status.progress.spent))
-                            LabeledContent(
-                                DashboardMoneyFormatter.remainingStatusTitle(status.progress.remaining),
-                                value: DashboardMoneyFormatter.remainingStatusValue(status.progress.remaining)
-                            )
-                        }
-                        .accessibilityElement(children: .combine)
-                    }
+        VStack(alignment: .leading, spacing: CairnSpacing.medium) {
+            DashboardSectionTitle(
+                title: "Budget status",
+                subtitle: sectionCount(snapshot.budgetProgress.count, singular: "budget")
+            )
+
+            VStack(alignment: .leading, spacing: CairnSpacing.medium) {
+                ForEach(DashboardProgressSectionPresentation.budgetItems(snapshot: snapshot), id: \.id) { item in
+                    CairnProgressSummaryView(presentation: item.presentation)
                 }
             }
+            .padding(.vertical, CairnSpacing.extraSmall)
         }
     }
 
     private func goalsSection(_ snapshot: DashboardSnapshot) -> some View {
-        GroupBox("Goals") {
-            VStack(alignment: .leading, spacing: 12) {
-                if snapshot.goalProgress.isEmpty {
-                    Text("No goals yet.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(snapshot.goalProgress, id: \.progress.goal.id) { status in
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(status.progress.goal.name)
-                                .font(.body)
-                            Text(status.progress.isCompleted ? "Completed" : "In Progress")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                            LabeledContent("Current", value: DashboardMoneyFormatter.currency(status.progress.goal.currentAmount))
-                            LabeledContent("Target", value: DashboardMoneyFormatter.currency(status.progress.goal.targetAmount))
-                            LabeledContent("Remaining", value: DashboardMoneyFormatter.currency(status.progress.remainingAmount))
+        VStack(alignment: .leading, spacing: CairnSpacing.medium) {
+            DashboardSectionTitle(
+                title: "Goal progress",
+                subtitle: sectionCount(snapshot.goalProgress.count, singular: "goal")
+            )
+
+            VStack(alignment: .leading, spacing: CairnSpacing.medium) {
+                ForEach(DashboardProgressSectionPresentation.goalItems(snapshot: snapshot), id: \.id) { item in
+                    CairnProgressSummaryView(presentation: item.presentation)
+                }
+            }
+            .padding(.vertical, CairnSpacing.extraSmall)
+        }
+    }
+
+    private func recentTransactionsSection(_ snapshot: DashboardSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: CairnSpacing.medium) {
+            DashboardSectionTitle(title: "Recent activity", subtitle: "Current month")
+
+            if snapshot.recentTransactions.isEmpty {
+                Text("Activity will appear here once transactions are recorded this month.")
+                    .font(.subheadline)
+                    .foregroundStyle(CairnColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(snapshot.recentTransactions, id: \.transaction.id) { recentTransaction in
+                        transactionRow(recentTransaction)
+
+                        if recentTransaction.transaction.id != snapshot.recentTransactions.last?.transaction.id {
+                            Divider()
+                                .overlay(CairnColor.separator)
                         }
-                        .accessibilityElement(children: .combine)
                     }
                 }
             }
         }
     }
 
-    private func recentTransactionsSection(_ snapshot: DashboardSnapshot) -> some View {
-        GroupBox("Recent Transactions") {
-            VStack(alignment: .leading, spacing: 12) {
-                if snapshot.recentTransactions.isEmpty {
-                    Text("No transactions in the current month.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(snapshot.recentTransactions, id: \.transaction.id) { recentTransaction in
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(alignment: .firstTextBaseline) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(recentTransaction.transaction.direction.displayName)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                    Text(recentTransaction.accountName)
-                                }
+    private func transactionRow(_ recentTransaction: DashboardRecentTransaction) -> some View {
+        let transaction = recentTransaction.transaction
+        let direction = transaction.direction.displayName
+        let metadata = transactionMetadata(recentTransaction)
+        let amount = CairnMoneyPresentation.currency(transaction.amount)
+        let date = DashboardDateFormatter.date(transaction.occurredAt)
 
-                                Spacer(minLength: 16)
+        return CairnFinancialRow(
+            title: direction,
+            metadata: metadata,
+            trailing: amount,
+            status: date,
+            accessibilityLabel: "\(direction), \(amount), \(metadata), \(date)"
+        ) {
+            Image(systemName: transaction.direction == .inflow ? "arrow.down.left" : "arrow.up.right")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(transaction.direction == .inflow ? CairnColor.positive : CairnColor.negative)
+        }
+    }
 
-                                Text(DashboardMoneyFormatter.currency(recentTransaction.transaction.amount))
-                                    .font(.body.monospacedDigit())
-                                    .multilineTextAlignment(.trailing)
-                            }
+    private func transactionMetadata(_ recentTransaction: DashboardRecentTransaction) -> String {
+        if let memo = recentTransaction.transaction.memo, memo.isEmpty == false {
+            return "\(recentTransaction.accountName) - \(memo)"
+        }
 
-                            Text(DashboardDateFormatter.dateTime(recentTransaction.transaction.occurredAt))
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
+        return recentTransaction.accountName
+    }
 
-                            if let memo = recentTransaction.transaction.memo {
-                                Text(memo)
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(2)
-                            }
-                        }
-                        .accessibilityElement(children: .combine)
-                    }
-                }
+    private func sectionCount(_ count: Int, singular: String) -> String {
+        switch count {
+        case 0:
+            "None yet"
+        case 1:
+            "1 \(singular)"
+        default:
+            "\(count) \(singular)s"
+        }
+    }
+}
+
+private struct DashboardFirstRunArtwork: View {
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            GroundShape()
+                .fill(CairnColor.lavenderSurface)
+                .frame(height: 72)
+                .offset(y: 12)
+
+            GroundLineShape()
+                .stroke(CairnColor.lavenderStone.opacity(0.75), lineWidth: 1.5)
+                .frame(height: 56)
+                .offset(y: 14)
+
+            Image("CairnHeroArtwork")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 124, height: 124)
+                .offset(y: -4)
+        }
+        .frame(height: 104)
+    }
+}
+
+private struct GroundShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.midY + 12))
+        path.addCurve(
+            to: CGPoint(x: rect.maxX, y: rect.midY - 6),
+            control1: CGPoint(x: rect.width * 0.25, y: rect.midY - 34),
+            control2: CGPoint(x: rect.width * 0.72, y: rect.midY + 18)
+        )
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.closeSubpath()
+        return path
+    }
+}
+
+private struct GroundLineShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + 12, y: rect.midY + 18))
+        path.addCurve(
+            to: CGPoint(x: rect.maxX - 12, y: rect.midY + 4),
+            control1: CGPoint(x: rect.width * 0.30, y: rect.midY - 18),
+            control2: CGPoint(x: rect.width * 0.66, y: rect.midY + 28)
+        )
+        return path
+    }
+}
+
+private struct DashboardSectionTitle: View {
+    let title: String
+    let subtitle: String?
+
+    init(title: String, subtitle: String? = nil) {
+        self.title = title
+        self.subtitle = subtitle
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: CairnSpacing.extraSmall) {
+            Text(title)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(CairnColor.textPrimary)
+
+            if let subtitle {
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(CairnColor.textSecondary)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct DashboardContentSection<Content: View>: View {
+    let title: String
+    let subtitle: String?
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: CairnSpacing.medium) {
+            DashboardSectionTitle(title: title, subtitle: subtitle)
+            content()
+        }
+        .padding(CairnSpacing.large)
+        .background(CairnColor.lavenderSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }

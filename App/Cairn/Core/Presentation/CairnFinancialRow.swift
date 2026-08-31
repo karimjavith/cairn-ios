@@ -44,7 +44,7 @@ struct CairnFinancialRow<Leading: View>: View {
                 if let metadata {
                     Text(metadata)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(CairnColor.textSecondary)
                         .lineLimit(2)
                 }
             }
@@ -58,7 +58,7 @@ struct CairnFinancialRow<Leading: View>: View {
                 if let status {
                     Text(status)
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(CairnColor.textSecondary)
                         .lineLimit(2)
                 }
             }
