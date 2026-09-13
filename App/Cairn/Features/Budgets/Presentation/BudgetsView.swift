@@ -28,30 +28,35 @@ struct BudgetsView: View {
     var body: some View {
         @Bindable var store = store
 
-        Group {
+        ZStack {
+            CairnColor.canvas
+                .ignoresSafeArea()
+
             if store.isLoading {
                 ProgressView("Loading budgets")
+                    .tint(CairnColor.plum)
+                    .foregroundStyle(CairnColor.textSecondary)
             } else if store.hasLoadFailed, let errorMessage = store.errorMessage {
-                LoadFailureView(
-                    title: "Budgets Unavailable",
-                    message: errorMessage,
-                    retry: {
-                        Task {
-                            await store.loadBudgets()
+                VStack {
+                    LoadFailureView(
+                        title: "Budgets Unavailable",
+                        message: errorMessage,
+                        retry: {
+                            Task {
+                                await store.loadBudgets()
+                            }
                         }
-                    }
-                )
+                    )
+                }
+                .padding(.horizontal, CairnSpacing.extraLarge)
             } else if store.isEmpty {
-                ContentUnavailableView(
-                    "No Budgets",
-                    systemImage: "chart.pie",
-                    description: Text("Add your first budget to track category spending.")
-                )
+                emptyBudgetsView
             } else {
                 budgetList
             }
         }
         .navigationTitle("Budgets")
+        .tint(CairnColor.plum)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -132,68 +137,195 @@ struct BudgetsView: View {
         }
     }
 
+    private var emptyBudgetsView: some View {
+        ScrollView {
+            CairnEmptyStateView(
+                title: "No budgets yet",
+                message: "Create a budget to set a spending boundary for a category.",
+                systemImage: "chart.pie",
+                actionLabel: "Add budget",
+                action: { store.startCreateBudget() }
+            )
+            .padding(.horizontal, CairnSpacing.extraLarge)
+            .padding(.top, CairnSpacing.section)
+        }
+        .scrollContentBackground(.hidden)
+    }
+
     private var budgetList: some View {
-        List(store.budgets, id: \.id) { budget in
-            if let progress = store.progress(for: budget.id) {
-                Button {
-                    store.selectDetail(budgetID: budget.id)
-                } label: {
-                    BudgetRowView(
-                        budget: budget,
-                        progress: progress,
-                        categoryName: store.categoryName(for: budget.categoryID)
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(accessibilityLabel(for: budget, progress: progress))
-                .swipeActions {
-                    Button(role: .destructive) {
-                        store.requestDelete(budget)
+        List {
+            CairnSectionHeading(
+                "Budget status",
+                subtitle: budgetCountText(store.budgets.count)
+            )
+            .listRowInsets(EdgeInsets(
+                top: CairnSpacing.large,
+                leading: CairnSpacing.extraLarge,
+                bottom: CairnSpacing.medium,
+                trailing: CairnSpacing.extraLarge
+            ))
+            .listRowSeparator(.hidden)
+            .listRowBackground(CairnColor.canvas)
+
+            ForEach(store.budgets, id: \.id) { budget in
+                if let progress = store.progress(for: budget.id) {
+                    Button {
+                        store.selectDetail(budgetID: budget.id)
                     } label: {
-                        Label("Delete Budget", systemImage: "trash")
+                        BudgetRowView(
+                            presentation: BudgetProgressPresentation.make(
+                                categoryName: store.categoryName(for: budget.categoryID),
+                                progress: progress
+                            ),
+                            periodText: BudgetDateFormatter.period(budget.period),
+                            showsSeparator: budget.id != store.budgets.last?.id
+                        )
                     }
-                    .accessibilityLabel("Delete \(store.categoryName(for: budget.categoryID)) Budget")
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(accessibilityLabel(for: budget, progress: progress))
+                    .swipeActions {
+                        Button(role: .destructive) {
+                            store.requestDelete(budget)
+                        } label: {
+                            Label("Delete Budget", systemImage: "trash")
+                        }
+                        .accessibilityLabel("Delete \(store.categoryName(for: budget.categoryID)) Budget")
+                    }
+                    .listRowInsets(EdgeInsets(
+                        top: 0,
+                        leading: CairnSpacing.extraLarge,
+                        bottom: 0,
+                        trailing: CairnSpacing.extraLarge
+                    ))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(CairnColor.canvas)
                 }
             }
+
+            Color.clear
+                .frame(height: CairnSpacing.section)
+                .listRowInsets(.init())
+                .listRowSeparator(.hidden)
+                .listRowBackground(CairnColor.canvas)
         }
+        .listStyle(.plain)
+        .listRowSpacing(0)
+        .environment(\.defaultMinListRowHeight, 0)
+        .scrollContentBackground(.hidden)
+        .background(CairnColor.canvas)
     }
 
     private func accessibilityLabel(for budget: Budget, progress: BudgetProgress) -> String {
-        "\(store.categoryName(for: budget.categoryID)), limit \(BudgetMoneyFormatter.currency(budget.limit)), spent \(BudgetMoneyFormatter.currency(progress.spent)), \(BudgetMoneyFormatter.remainingStatusAccessibilityText(progress.remaining)), \(BudgetDateFormatter.period(budget.period))"
+        BudgetProgressPresentation.make(
+            categoryName: store.categoryName(for: budget.categoryID),
+            progress: progress
+        )
+        .accessibilityLabel
+    }
+
+    private func budgetCountText(_ count: Int) -> String {
+        count == 1 ? "1 budget" : "\(count) budgets"
     }
 }
 
 private struct BudgetRowView: View {
-    let budget: Budget
-    let progress: BudgetProgress
-    let categoryName: String
+    let presentation: BudgetProgressPresentation
+    let periodText: String
+    let showsSeparator: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(categoryName)
-                        .font(.body)
-                    Text(BudgetDateFormatter.period(budget.period))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
+        VStack(alignment: .leading, spacing: CairnSpacing.small) {
+            HStack(alignment: .firstTextBaseline, spacing: CairnSpacing.medium) {
+                Text(presentation.categoryName)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(CairnColor.textPrimary)
+                    .lineLimit(2)
 
-                Spacer(minLength: 16)
+                Spacer(minLength: CairnSpacing.medium)
 
-                Text(BudgetMoneyFormatter.currency(budget.limit))
-                    .font(.body.monospacedDigit())
+                Text(presentation.valueText)
+                    .font(.subheadline.weight(.semibold))
+                    .monospacedDigit()
                     .multilineTextAlignment(.trailing)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.86)
+                    .foregroundStyle(presentation.valueColor)
             }
 
-            LabeledContent("Spent", value: BudgetMoneyFormatter.currency(progress.spent))
-                .font(.footnote)
-            LabeledContent(
-                BudgetMoneyFormatter.remainingStatusTitle(progress.remaining),
-                value: BudgetMoneyFormatter.remainingStatusValue(progress.remaining)
-            )
-                .font(.footnote)
+            ProgressView(value: presentation.visibleFraction)
+                .tint(presentation.progressColor)
+                .accessibilityHidden(true)
+
+            HStack(alignment: .firstTextBaseline, spacing: CairnSpacing.medium) {
+                Text(presentation.detailText)
+                    .font(.caption)
+                    .foregroundStyle(CairnColor.textSecondary)
+                    .lineLimit(2)
+
+                Spacer(minLength: CairnSpacing.medium)
+
+                Text(periodText)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(CairnColor.textSecondary)
+                    .multilineTextAlignment(.trailing)
+                    .lineLimit(2)
+            }
+
+            if let stateText = presentation.visibleStateText {
+                Text(stateText)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(presentation.valueColor)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
+        .padding(.vertical, CairnSpacing.medium)
         .contentShape(Rectangle())
+        .overlay(alignment: .bottom) {
+            if showsSeparator {
+                Rectangle()
+                    .fill(CairnColor.separator)
+                    .frame(height: 1)
+                    .accessibilityHidden(true)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(presentation.accessibilityLabel)
+    }
+}
+
+private extension BudgetProgressPresentation {
+    var visibleStateText: String? {
+        switch status {
+        case .normal:
+            nil
+        case .nearLimit:
+            "Near limit"
+        case .fullySpent:
+            "Fully spent"
+        case .overspent:
+            "Overspent"
+        }
+    }
+
+    var valueColor: Color {
+        switch status {
+        case .fullySpent:
+            CairnColor.warning
+        case .overspent:
+            CairnColor.negative
+        case .normal, .nearLimit:
+            CairnColor.textPrimary
+        }
+    }
+
+    var progressColor: Color {
+        switch status {
+        case .overspent:
+            CairnColor.negative
+        case .nearLimit, .fullySpent:
+            CairnColor.warning
+        case .normal:
+            CairnColor.plum
+        }
     }
 }
