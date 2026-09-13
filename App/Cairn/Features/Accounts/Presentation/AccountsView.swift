@@ -29,30 +29,35 @@ struct AccountsView: View {
     var body: some View {
         @Bindable var store = store
 
-        Group {
+        ZStack {
+            CairnColor.canvas
+                .ignoresSafeArea()
+
             if store.isLoading {
                 ProgressView("Loading accounts")
+                    .tint(CairnColor.plum)
+                    .foregroundStyle(CairnColor.textSecondary)
             } else if store.hasLoadFailed, let errorMessage = store.errorMessage {
-                LoadFailureView(
-                    title: "Accounts Unavailable",
-                    message: errorMessage,
-                    retry: {
-                        Task {
-                            await store.loadAccounts()
+                VStack {
+                    LoadFailureView(
+                        title: "Accounts Unavailable",
+                        message: errorMessage,
+                        retry: {
+                            Task {
+                                await store.loadAccounts()
+                            }
                         }
-                    }
-                )
+                    )
+                }
+                .padding(.horizontal, CairnSpacing.extraLarge)
             } else if store.isEmpty {
-                ContentUnavailableView(
-                    "No Accounts",
-                    systemImage: "creditcard",
-                    description: Text("Add your first account to start tracking balances.")
-                )
+                emptyAccountsView
             } else {
-                accountList
+                accountsContent
             }
         }
         .navigationTitle("Accounts")
+        .tint(CairnColor.plum)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -146,26 +151,173 @@ struct AccountsView: View {
         store.startCreateAccount()
     }
 
-    private var accountList: some View {
-        List(store.accounts, id: \.id) { account in
-            Button {
-                store.selectDetail(accountID: account.id)
-            } label: {
-                AccountRowView(
-                    account: account,
-                    balanceState: store.balances[account.id]
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(accessibilityLabel(for: account))
-            .swipeActions {
-                Button(role: .destructive) {
-                    store.requestDelete(account)
+    private var emptyAccountsView: some View {
+        ScrollView {
+            CairnEmptyStateView(
+                title: "Your accounts, in one place.",
+                message: "Add your first account to start tracking balances and activity.",
+                systemImage: "creditcard",
+                actionLabel: "Add account",
+                action: { store.startCreateAccount() }
+            )
+            .padding(.horizontal, CairnSpacing.extraLarge)
+            .padding(.top, CairnSpacing.section)
+        }
+        .scrollContentBackground(.hidden)
+    }
+
+    private var accountsContent: some View {
+        List {
+            accountSummary
+                .listRowInsets(EdgeInsets(
+                    top: CairnSpacing.large,
+                    leading: CairnSpacing.extraLarge,
+                    bottom: CairnSpacing.section,
+                    trailing: CairnSpacing.extraLarge
+                ))
+                .listRowSeparator(.hidden)
+                .listRowBackground(CairnColor.canvas)
+
+            ForEach(store.accounts, id: \.id) { account in
+                Button {
+                    store.selectDetail(accountID: account.id)
                 } label: {
-                    Label("Delete \(account.name)", systemImage: "trash")
+                    AccountRowView(
+                        account: account,
+                        balanceState: store.balances[account.id]
+                    )
                 }
-                .accessibilityLabel("Delete \(account.name)")
+                .buttonStyle(.plain)
+                .accessibilityLabel(accessibilityLabel(for: account))
+                .swipeActions {
+                    Button(role: .destructive) {
+                        store.requestDelete(account)
+                    } label: {
+                        Label("Delete \(account.name)", systemImage: "trash")
+                    }
+                    .accessibilityLabel("Delete \(account.name)")
+                }
+                .contextMenu {
+                    Button(role: .destructive) {
+                        store.requestDelete(account)
+                    } label: {
+                        Label("Delete \(account.name)", systemImage: "trash")
+                    }
+                }
+                .listRowInsets(EdgeInsets(
+                    top: 0,
+                    leading: CairnSpacing.extraLarge,
+                    bottom: 0,
+                    trailing: CairnSpacing.extraLarge
+                ))
+                .listRowSeparator(.hidden)
+                .listRowBackground(CairnColor.canvas)
+
+                if account.id != store.accounts.last?.id {
+                    Divider()
+                        .overlay(CairnColor.separator)
+                        .listRowInsets(EdgeInsets(
+                            top: 0,
+                            leading: CairnSpacing.extraLarge,
+                            bottom: 0,
+                            trailing: CairnSpacing.extraLarge
+                        ))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(CairnColor.canvas)
+                }
             }
+
+            Color.clear
+                .frame(height: CairnSpacing.section)
+                .listRowInsets(.init())
+                .listRowSeparator(.hidden)
+                .listRowBackground(CairnColor.canvas)
+        }
+        .listStyle(.plain)
+        .listRowSpacing(0)
+        .environment(\.defaultMinListRowHeight, 0)
+        .scrollContentBackground(.hidden)
+        .background(CairnColor.canvas)
+    }
+
+    @ViewBuilder
+    private var accountSummary: some View {
+        if let summaries = AccountListPresentation.currencySummaries(
+            accounts: store.accounts,
+            balances: loadedBalances
+        ) {
+            if summaries.count == 1, let summary = summaries.first {
+                VStack(alignment: .leading, spacing: CairnSpacing.medium) {
+                    Text("Total balance")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(CairnColor.plum)
+
+                    Text(CairnMoneyPresentation.currency(summary.total))
+                        .font(.system(.largeTitle, design: .serif).weight(.semibold))
+                        .monospacedDigit()
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.76)
+                        .foregroundStyle(CairnColor.textPrimary)
+
+                    Text(AccountListPresentation.accountCountText(
+                        summary.accountCount,
+                        currencyCode: summary.currencyCode
+                    ))
+                    .font(.subheadline)
+                    .foregroundStyle(CairnColor.textSecondary)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(
+                    "Total balance, \(CairnMoneyPresentation.currency(summary.total)), \(AccountListPresentation.accountCountText(summary.accountCount, currencyCode: summary.currencyCode))"
+                )
+            } else {
+                VStack(alignment: .leading, spacing: CairnSpacing.medium) {
+                    Text("Balances")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(CairnColor.textPrimary)
+
+                    VStack(alignment: .leading, spacing: CairnSpacing.small) {
+                        ForEach(summaries, id: \.currencyCode) { summary in
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(summary.currencyCode)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(CairnColor.textSecondary)
+
+                                Spacer(minLength: CairnSpacing.large)
+
+                                Text(CairnMoneyPresentation.currency(summary.total))
+                                    .cairnRowAmount()
+                                    .foregroundStyle(CairnColor.textPrimary)
+                            }
+                            .accessibilityElement(children: .combine)
+                        }
+                    }
+
+                    Text("Cairn does not convert currencies.")
+                        .font(.subheadline)
+                        .foregroundStyle(CairnColor.textSecondary)
+                }
+            }
+        } else {
+            VStack(alignment: .leading, spacing: CairnSpacing.small) {
+                Text("Balances")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(CairnColor.textPrimary)
+
+                Text("Current balances are updating.")
+                    .font(.subheadline)
+                    .foregroundStyle(CairnColor.textSecondary)
+            }
+        }
+    }
+
+    private var loadedBalances: [AccountID: Money] {
+        store.balances.compactMapValues { state in
+            if case let .loaded(balance) = state {
+                return balance
+            }
+
+            return nil
         }
     }
 
@@ -192,40 +344,34 @@ private struct AccountRowView: View {
     let balanceState: AccountsStore.BalanceState?
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(account.name)
-                    .font(.body)
-                Text(account.type.displayName)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+        HStack(alignment: .firstTextBaseline, spacing: CairnSpacing.medium) {
+            CairnFinancialRow(
+                title: account.name,
+                metadata: account.type.displayName,
+                trailing: balanceText,
+                accessibilityLabel: ""
+            )
+            .accessibilityHidden(true)
 
-            Spacer(minLength: 16)
-
-            balanceView
-                .font(.body.monospacedDigit())
-                .multilineTextAlignment(.trailing)
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(CairnColor.textTertiary)
+                .accessibilityHidden(true)
         }
+        .padding(.vertical, CairnSpacing.extraSmall)
         .contentShape(Rectangle())
     }
 
-    @ViewBuilder
-    private var balanceView: some View {
+    private var balanceText: String {
         switch balanceState {
         case let .loaded(balance):
-            Text(AccountMoneyFormatter.currency(balance))
+            CairnMoneyPresentation.currency(balance)
         case .loading:
-            ProgressView()
-                .accessibilityLabel("Current balance loading")
+            "Loading"
         case .failed:
-            Label("Balance unavailable", systemImage: "exclamationmark.triangle")
-                .labelStyle(.iconOnly)
-                .foregroundStyle(.secondary)
-                .accessibilityLabel("Current balance unavailable")
+            "Unavailable"
         case nil:
-            Text("Pending")
-                .foregroundStyle(.secondary)
+            "Pending"
         }
     }
 }

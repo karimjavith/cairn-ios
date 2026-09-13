@@ -61,7 +61,11 @@ struct RootView: View {
                 transactionRepository: dependencies.transactionRepository,
                 accountRepository: dependencies.accountRepository,
                 categoryRepository: dependencies.categoryRepository,
-                createTransaction: dependencies.createTransaction
+                createTransaction: dependencies.createTransaction,
+                startAccountCreation: {
+                    selectedTab = .accounts
+                    accountCreationRequest = UUID()
+                }
             )
         case .budgets:
             BudgetsView(

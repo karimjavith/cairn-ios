@@ -242,7 +242,8 @@ Empty:
 
 Populated:
 
-- per-currency summary when needed
+- single-currency accounts show one editorial total balance summary
+- mixed-currency accounts show compact per-currency summaries
 - account rows with name, type, current balance
 - no fake combined total across currencies
 
@@ -271,16 +272,21 @@ Empty:
 
 Populated:
 
-- chronological grouping when implemented
-- income/expense text semantics
+- chronological grouping by day
+- customer-facing Income/Expense text semantics
 - row title/context/amount/date
 - optional search/filter only when functionality exists
 
 Add/Edit/Delete:
 
 - native editor controls
-- amount and direction clearly labeled
+- amount and Income/Expense direction clearly labeled
 - destructive delete confirmation.
+
+Zero-account:
+
+- transactions need an account before they can be recorded
+- guide to Add Account rather than opening a transaction editor.
 
 ## Budgets UX Spec
 

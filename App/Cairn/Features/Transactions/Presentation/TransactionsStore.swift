@@ -48,6 +48,10 @@ final class TransactionsStore {
         !isLoading && transactions.isEmpty && errorMessage == nil
     }
 
+    var needsAccountBeforeTransaction: Bool {
+        !isLoading && transactions.isEmpty && accounts.isEmpty && errorMessage == nil
+    }
+
     var hasLoadFailed: Bool {
         !isLoading && transactions.isEmpty && accounts.isEmpty && categories.isEmpty && errorMessage != nil
     }
@@ -74,6 +78,10 @@ final class TransactionsStore {
     }
 
     func startCreateTransaction() {
+        guard accounts.isEmpty == false else {
+            return
+        }
+
         editor = TransactionEditorState(
             transaction: nil,
             accounts: accounts,

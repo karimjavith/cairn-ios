@@ -59,6 +59,66 @@ enum AccountMoneyFormatter {
     }
 }
 
+nonisolated struct AccountCurrencySummary: Equatable, Sendable {
+    let currencyCode: String
+    let total: Money
+    let accountCount: Int
+}
+
+enum AccountListPresentation {
+    static func currencySummaries(
+        accounts: [Account],
+        balances: [AccountID: Money]
+    ) -> [AccountCurrencySummary]? {
+        guard accounts.isEmpty == false,
+              accounts.allSatisfy({ balances[$0.id] != nil }) else {
+            return nil
+        }
+
+        var summariesByCurrency: [String: (total: Money, count: Int)] = [:]
+
+        for account in accounts {
+            guard let balance = balances[account.id] else {
+                return nil
+            }
+
+            if let existing = summariesByCurrency[balance.currencyCode] {
+                do {
+                    summariesByCurrency[balance.currencyCode] = (
+                        total: try existing.total.adding(balance),
+                        count: existing.count + 1
+                    )
+                } catch {
+                    return nil
+                }
+            } else {
+                summariesByCurrency[balance.currencyCode] = (balance, 1)
+            }
+        }
+
+        return summariesByCurrency
+            .map { currencyCode, value in
+                AccountCurrencySummary(
+                    currencyCode: currencyCode,
+                    total: value.total,
+                    accountCount: value.count
+                )
+            }
+            .sorted { lhs, rhs in
+                if lhs.currencyCode == rhs.currencyCode {
+                    return lhs.accountCount < rhs.accountCount
+                }
+
+                return lhs.currencyCode < rhs.currencyCode
+            }
+    }
+
+    static func accountCountText(_ count: Int, currencyCode: String) -> String {
+        let accountText = count == 1 ? "1 account" : "\(count) accounts"
+        return "\(accountText) in \(currencyCode)"
+    }
+}
+
 enum AccountMoneyTextParser {
     enum Error: Swift.Error, Equatable, Sendable {
         case empty

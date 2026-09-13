@@ -14,6 +14,106 @@ struct TransactionsStoreTests {
     private let dotDecimalLocale = Locale(identifier: "en_GB")
     private let commaDecimalLocale = Locale(identifier: "de_DE")
 
+    @Test func transactionDirectionPresentationUsesCustomerLanguage() {
+        #expect(TransactionDirection.inflow.displayName == "Income")
+        #expect(TransactionDirection.outflow.displayName == "Expense")
+    }
+
+    @Test func transactionRowPresentationUsesSignedIncomeAndExpenseAmounts() throws {
+        let income = try makeTransaction(direction: .inflow, amount: Money(amount: 100, currencyCode: "GBP"))
+        let expense = try makeTransaction(direction: .outflow, amount: Money(amount: 25, currencyCode: "GBP"))
+
+        let incomePresentation = TransactionListPresentation.row(
+            transaction: income,
+            accountName: "Everyday",
+            categoryName: "Salary",
+            locale: dotDecimalLocale
+        )
+        let expensePresentation = TransactionListPresentation.row(
+            transaction: expense,
+            accountName: "Everyday",
+            categoryName: "Groceries",
+            locale: dotDecimalLocale
+        )
+
+        #expect(incomePresentation.amountText.hasPrefix("+"))
+        #expect(expensePresentation.amountText.hasPrefix("-"))
+        #expect(incomePresentation.accessibilityLabel.contains("Income"))
+        #expect(expensePresentation.accessibilityLabel.contains("Expense"))
+    }
+
+    @Test func transactionSectionsGroupChronologicallyByDay() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(secondsFromGMT: 0))
+        let now = Date(timeIntervalSince1970: 1_789_171_200)
+        let today = try makeTransaction(occurredAt: Date(timeIntervalSince1970: 1_789_174_800), memo: "Today")
+        let yesterday = try makeTransaction(occurredAt: Date(timeIntervalSince1970: 1_789_084_800), memo: "Yesterday")
+        let older = try makeTransaction(occurredAt: Date(timeIntervalSince1970: 1_788_998_400), memo: "Older")
+
+        let sections = TransactionListPresentation.sections(
+            transactions: [older, today, yesterday],
+            calendar: calendar,
+            locale: dotDecimalLocale,
+            now: now
+        )
+
+        #expect(Array(sections.map(\.title).prefix(2)) == ["Today", "Yesterday"])
+        #expect(sections.last?.title.contains("2026") == true)
+        #expect(sections.map(\.transactions.first?.memo) == ["Today", "Yesterday", "Older"])
+    }
+
+    @Test func transactionSectionsKeepDeterministicOrderingInsideDay() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(secondsFromGMT: 0))
+        let sameTime = Date(timeIntervalSince1970: 1_789_174_800)
+        let later = try makeTransaction(
+            id: TransactionID(rawValue: try #require(UUID(uuidString: "33333333-3333-3333-3333-333333333333"))),
+            occurredAt: sameTime.addingTimeInterval(60),
+            memo: "Later"
+        )
+        let firstID = try makeTransaction(
+            id: TransactionID(rawValue: try #require(UUID(uuidString: "11111111-1111-1111-1111-111111111111"))),
+            occurredAt: sameTime,
+            memo: "First ID"
+        )
+        let secondID = try makeTransaction(
+            id: TransactionID(rawValue: try #require(UUID(uuidString: "22222222-2222-2222-2222-222222222222"))),
+            occurredAt: sameTime,
+            memo: "Second ID"
+        )
+
+        let sections = TransactionListPresentation.sections(
+            transactions: [secondID, later, firstID],
+            calendar: calendar,
+            locale: dotDecimalLocale,
+            now: sameTime
+        )
+
+        #expect(sections.first?.transactions.map(\.memo) == ["Later", "First ID", "Second ID"])
+    }
+
+    @Test func zeroAccountStateDoesNotOpenTransactionEditor() async {
+        let store = makeStore()
+
+        await store.loadTransactions()
+        store.startCreateTransaction()
+
+        #expect(store.needsAccountBeforeTransaction)
+        #expect(store.editor == nil)
+    }
+
+    @Test func emptyTransactionStateAddTransactionActionUsesEditorFlow() async throws {
+        let account = try makeAccount()
+        let store = makeStore(accountRepository: TransactionsFeatureAccountRepository(accounts: [account]))
+
+        await store.loadTransactions()
+        store.startCreateTransaction()
+
+        #expect(store.isEmpty)
+        #expect(store.needsAccountBeforeTransaction == false)
+        #expect(store.editor?.mode == .create)
+    }
+
     @Test func loadsTransactionsPreservingRepositoryOrder() async throws {
         let account = try makeAccount()
         let newest = try makeTransaction(accountID: account.id, occurredAt: date(2_000), memo: "Newest")

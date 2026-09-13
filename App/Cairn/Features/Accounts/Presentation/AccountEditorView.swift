@@ -46,6 +46,11 @@ struct AccountEditorView: View {
                 }
             }
             .navigationTitle(editor.title)
+            .contentMargins(.top, CairnSpacing.small, for: .scrollContent)
+            .listSectionSpacing(CairnSpacing.medium)
+            .scrollContentBackground(.hidden)
+            .background(CairnColor.canvas)
+            .tint(CairnColor.plum)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: cancel)

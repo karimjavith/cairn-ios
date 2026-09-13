@@ -118,7 +118,8 @@ final class DashboardStore {
             let recentTransactions = transactions.prefix(recentTransactionLimit).map { transaction in
                 DashboardRecentTransaction(
                     transaction: transaction,
-                    accountName: accountName(for: transaction.accountID, accounts: accounts)
+                    accountName: accountName(for: transaction.accountID, accounts: accounts),
+                    categoryName: categoryName(for: transaction.categoryID, categoryNamesByID: categoryNamesByID)
                 )
             }
 
@@ -225,6 +226,17 @@ final class DashboardStore {
     private func accountName(for accountID: AccountID, accounts: [Account]) -> String {
         accounts.first { $0.id == accountID }?.name ?? "Unknown Account"
     }
+
+    private func categoryName(
+        for categoryID: CategoryID?,
+        categoryNamesByID: [CategoryID: String]
+    ) -> String {
+        guard let categoryID else {
+            return "Uncategorized"
+        }
+
+        return categoryNamesByID[categoryID] ?? "Unknown Category"
+    }
 }
 
 nonisolated struct DashboardSnapshot: Equatable, Sendable {
@@ -264,6 +276,7 @@ nonisolated struct DashboardGoalStatus: Equatable, Sendable {
 nonisolated struct DashboardRecentTransaction: Equatable, Sendable {
     let transaction: Transaction
     let accountName: String
+    let categoryName: String
 }
 
 private enum DashboardStoreError: Error {

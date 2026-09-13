@@ -50,6 +50,64 @@ struct AccountsStoreTests {
         }
     }
 
+    @Test func singleCurrencySummaryAggregatesLoadedBalances() throws {
+        let everyday = try makeAccount(name: "Everyday", currencyCode: "GBP")
+        let savings = try makeAccount(name: "Savings", currencyCode: "GBP")
+        let summaries = AccountListPresentation.currencySummaries(
+            accounts: [everyday, savings],
+            balances: [
+                everyday.id: try Money(amount: 125, currencyCode: "GBP"),
+                savings.id: try Money(amount: 75, currencyCode: "GBP")
+            ]
+        )
+
+        let summary = try #require(summaries?.first)
+        #expect(summaries?.count == 1)
+        #expect(summary.total == (try Money(amount: 200, currencyCode: "GBP")))
+        #expect(summary.accountCount == 2)
+        #expect(AccountListPresentation.accountCountText(summary.accountCount, currencyCode: summary.currencyCode) == "2 accounts in GBP")
+    }
+
+    @Test func mixedCurrencySummaryKeepsCurrenciesSeparated() throws {
+        let sterling = try makeAccount(name: "Everyday", currencyCode: "GBP")
+        let euro = try makeAccount(name: "Euro Cash", currencyCode: "EUR")
+        let summaries = try #require(AccountListPresentation.currencySummaries(
+            accounts: [sterling, euro],
+            balances: [
+                sterling.id: Money(amount: 125, currencyCode: "GBP"),
+                euro.id: Money(amount: 75, currencyCode: "EUR")
+            ]
+        ))
+
+        #expect(summaries.map(\.currencyCode) == ["EUR", "GBP"])
+        #expect(summaries.map(\.total) == [
+            try Money(amount: 75, currencyCode: "EUR"),
+            try Money(amount: 125, currencyCode: "GBP")
+        ])
+    }
+
+    @Test func accountSummaryWaitsForEveryLoadedBalance() throws {
+        let everyday = try makeAccount(name: "Everyday", currencyCode: "GBP")
+        let savings = try makeAccount(name: "Savings", currencyCode: "GBP")
+
+        let summaries = AccountListPresentation.currencySummaries(
+            accounts: [everyday, savings],
+            balances: [
+                everyday.id: try Money(amount: 125, currencyCode: "GBP")
+            ]
+        )
+
+        #expect(summaries == nil)
+    }
+
+    @Test func emptyStateAddAccountActionUsesCreateEditorFlow() {
+        let store = makeStore()
+
+        store.startCreateAccount()
+
+        #expect(store.editor?.mode == .create)
+    }
+
     @Test func loadsAccountsPreservingRepositoryOrder() async throws {
         let zeta = try makeAccount(name: "Zeta")
         let alpha = try makeAccount(name: "Alpha")

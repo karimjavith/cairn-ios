@@ -502,30 +502,24 @@ struct DashboardView: View {
 
     private func transactionRow(_ recentTransaction: DashboardRecentTransaction) -> some View {
         let transaction = recentTransaction.transaction
-        let direction = transaction.direction.displayName
-        let metadata = transactionMetadata(recentTransaction)
-        let amount = CairnMoneyPresentation.currency(transaction.amount)
+        let presentation = TransactionListPresentation.row(
+            transaction: transaction,
+            accountName: recentTransaction.accountName,
+            categoryName: recentTransaction.categoryName
+        )
         let date = DashboardDateFormatter.date(transaction.occurredAt)
 
         return CairnFinancialRow(
-            title: direction,
-            metadata: metadata,
-            trailing: amount,
+            title: presentation.title,
+            metadata: recentTransaction.accountName,
+            trailing: presentation.amountText,
             status: date,
-            accessibilityLabel: "\(direction), \(amount), \(metadata), \(date)"
+            accessibilityLabel: "\(presentation.accessibilityLabel), \(date)"
         ) {
             Image(systemName: transaction.direction == .inflow ? "arrow.down.left" : "arrow.up.right")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(transaction.direction == .inflow ? CairnColor.positive : CairnColor.negative)
         }
-    }
-
-    private func transactionMetadata(_ recentTransaction: DashboardRecentTransaction) -> String {
-        if let memo = recentTransaction.transaction.memo, memo.isEmpty == false {
-            return "\(recentTransaction.accountName) - \(memo)"
-        }
-
-        return recentTransaction.accountName
     }
 
     private func sectionCount(_ count: Int, singular: String) -> String {
