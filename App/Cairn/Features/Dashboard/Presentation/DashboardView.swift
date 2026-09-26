@@ -10,6 +10,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @State private var store: DashboardStore
+    private let creditScoreRepository: any CreditScoreRepository
     @ScaledMetric(relativeTo: .largeTitle) private var emptyHeroSize: CGFloat = 40
     @ScaledMetric(relativeTo: .largeTitle) private var financialHeroSize: CGFloat = 42
     private let selectTab: (AppTab) -> Void
@@ -21,6 +22,7 @@ struct DashboardView: View {
         accountRepository: any AccountRepository,
         budgetRepository: any BudgetRepository,
         goalRepository: any GoalRepository,
+        creditScoreRepository: any CreditScoreRepository,
         categoryRepository: any CategoryRepository,
         transactionRepository: any TransactionRepository,
         calculateAccountBalance: CalculateAccountBalance,
@@ -33,6 +35,7 @@ struct DashboardView: View {
     ) {
         self.selectTab = selectTab
         self.startAccountCreation = startAccountCreation
+        self.creditScoreRepository = creditScoreRepository
         _store = State(wrappedValue: DashboardStore(
             accountRepository: accountRepository,
             budgetRepository: budgetRepository,
@@ -110,6 +113,8 @@ struct DashboardView: View {
                 if store.hasLoadedEmptyDashboard {
                     emptyDashboard
                         .frame(minHeight: proxy.size.height, alignment: .top)
+
+                    creditScoreSection
                 } else {
                     loadedDashboard(snapshot)
                 }
@@ -207,10 +212,18 @@ struct DashboardView: View {
             if snapshot.goalProgress.isEmpty == false {
                 goalsSection(snapshot)
             }
+
+            DashboardCreditScoreSummary(repository: creditScoreRepository)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, Self.pageMargin)
         .padding(.bottom, CairnSpacing.section)
+    }
+
+    private var creditScoreSection: some View {
+        DashboardCreditScoreSummary(repository: creditScoreRepository)
+            .padding(.horizontal, Self.pageMargin)
+            .padding(.bottom, CairnSpacing.section)
     }
 
     @ViewBuilder

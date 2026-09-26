@@ -26,9 +26,14 @@ struct RecurringTransactionsView: View {
     var body: some View {
         @Bindable var store = store
 
-        Group {
+        ZStack {
+            CairnColor.canvas
+                .ignoresSafeArea()
+
             if store.isLoading {
                 ProgressView("Loading recurring transactions")
+                    .tint(CairnColor.plum)
+                    .foregroundStyle(CairnColor.textSecondary)
             } else if store.hasLoadFailed, let errorMessage = store.errorMessage {
                 LoadFailureView(
                     title: "Recurring Transactions Unavailable",
@@ -39,17 +44,15 @@ struct RecurringTransactionsView: View {
                         }
                     }
                 )
+                .padding(.horizontal, CairnSpacing.extraLarge)
             } else if store.isEmpty {
-                ContentUnavailableView(
-                    "No Recurring Transactions",
-                    systemImage: "repeat",
-                    description: Text("Add your first recurring transaction to track repeated activity.")
-                )
+                emptyRecurringTransactionsView
             } else {
                 recurringTransactionList
             }
         }
         .navigationTitle("Recurring Transactions")
+        .tint(CairnColor.plum)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -61,13 +64,21 @@ struct RecurringTransactionsView: View {
         }
         .safeAreaInset(edge: .bottom) {
             if let errorMessage = store.errorMessage, !store.hasLoadFailed {
-                Text(errorMessage)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .background(.bar)
-                    .accessibilityLabel(errorMessage)
+                Label {
+                    Text(errorMessage)
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(CairnColor.warning)
+                        .accessibilityHidden(true)
+                }
+                .font(.subheadline)
+                .foregroundStyle(CairnColor.textPrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(CairnSpacing.large)
+                .background(CairnColor.lavenderSurface)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(errorMessage)
             }
         }
         .sheet(item: $store.editor) { editor in
@@ -129,38 +140,81 @@ struct RecurringTransactionsView: View {
         }
     }
 
+    private var emptyRecurringTransactionsView: some View {
+        ScrollView {
+            CairnEmptyStateView(
+                title: "No recurring transactions yet",
+                message: "Add a recurring transaction to keep track of scheduled activity.",
+                systemImage: "repeat",
+                actionLabel: "Add recurring transaction",
+                action: { store.startCreateRecurringTransaction() }
+            )
+            .padding(.horizontal, CairnSpacing.extraLarge)
+            .padding(.top, CairnSpacing.section)
+        }
+    }
+
     private var recurringTransactionList: some View {
-        List(store.recurringTransactions, id: \.id) { recurringTransaction in
-            Button {
-                store.selectDetail(recurringTransactionID: recurringTransaction.id)
-            } label: {
-                RecurringTransactionRowView(
-                    recurringTransaction: recurringTransaction,
-                    accountName: store.accountName(for: recurringTransaction.accountID),
-                    nextOccurrence: store.nextOccurrence(for: recurringTransaction.id)
-                )
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(accessibilityLabel(for: recurringTransaction))
-            .swipeActions {
-                Button(role: .destructive) {
-                    store.requestDelete(recurringTransaction)
+        List {
+            CairnSectionHeading(
+                "Scheduled activity",
+                subtitle: store.recurringTransactions.count == 1
+                    ? "1 recurring transaction"
+                    : "\(store.recurringTransactions.count) recurring transactions"
+            )
+            .listRowInsets(EdgeInsets(
+                top: CairnSpacing.large,
+                leading: CairnSpacing.extraLarge,
+                bottom: CairnSpacing.medium,
+                trailing: CairnSpacing.extraLarge
+            ))
+            .listRowSeparator(.hidden)
+            .listRowBackground(CairnColor.canvas)
+
+            ForEach(store.recurringTransactions, id: \.id) { recurringTransaction in
+                Button {
+                    store.selectDetail(recurringTransactionID: recurringTransaction.id)
                 } label: {
-                    Label("Delete Recurring Transaction", systemImage: "trash")
+                    RecurringTransactionRowView(
+                        recurringTransaction: recurringTransaction,
+                        accountName: store.accountName(for: recurringTransaction.accountID),
+                        nextOccurrence: store.nextOccurrence(for: recurringTransaction.id)
+                    )
                 }
-                .accessibilityLabel("Delete \(deleteContext(for: recurringTransaction))")
+                .buttonStyle(.plain)
+                .accessibilityLabel(accessibilityLabel(for: recurringTransaction))
+                .listRowInsets(EdgeInsets(
+                    top: CairnSpacing.small,
+                    leading: CairnSpacing.extraLarge,
+                    bottom: CairnSpacing.small,
+                    trailing: CairnSpacing.extraLarge
+                ))
+                .listRowBackground(CairnColor.canvas)
+                .swipeActions {
+                    Button(role: .destructive) {
+                        store.requestDelete(recurringTransaction)
+                    } label: {
+                        Label("Delete Recurring Transaction", systemImage: "trash")
+                    }
+                    .accessibilityLabel("Delete \(deleteContext(for: recurringTransaction))")
+                }
             }
         }
+        .scrollContentBackground(.hidden)
     }
 
     private func accessibilityLabel(for recurringTransaction: RecurringTransaction) -> String {
         let amount = RecurringTransactionMoneyFormatter.currency(recurringTransaction.amount)
         let accountName = store.accountName(for: recurringTransaction.accountID)
         let nextOccurrenceText = store.nextOccurrence(for: recurringTransaction.id)
-            .map { RecurringTransactionDateFormatter.dateTime($0) } ?? "No next occurrence"
-        let memo = recurringTransaction.memo.map { ", \($0)" } ?? ""
+            .map { "Next \(RecurringTransactionDateFormatter.dateTime($0))" } ?? "No next occurrence"
+        let endDateText = recurringTransaction.endDate.map {
+            ", ends \(RecurringTransactionDateFormatter.dateTime($0))"
+        } ?? ""
 
-        return "\(recurringTransaction.direction.displayName), \(amount), \(accountName), \(recurringTransaction.frequency.displayName), next occurrence \(nextOccurrenceText)\(memo)"
+        let title = recurringTransaction.memo ?? "Recurring transaction"
+
+        return "\(title), \(amount), \(recurringTransaction.direction.displayName), \(accountName), \(recurringTransaction.frequency.displayName), \(nextOccurrenceText), starts \(RecurringTransactionDateFormatter.dateTime(recurringTransaction.startDate))\(endDateText)"
     }
 
     private func deleteContext(for recurringTransaction: RecurringTransaction) -> String {
@@ -174,50 +228,54 @@ private struct RecurringTransactionRowView: View {
     let nextOccurrence: Date?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: CairnSpacing.small) {
             HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(recurringTransaction.direction.displayName)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    Text(accountName)
-                        .font(.body)
-                }
+                Text(recurringTransaction.memo ?? "Recurring transaction")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(CairnColor.textPrimary)
+                    .lineLimit(2)
 
-                Spacer(minLength: 16)
+                Spacer(minLength: CairnSpacing.medium)
 
                 Text(RecurringTransactionMoneyFormatter.currency(recurringTransaction.amount))
-                    .font(.body.monospacedDigit())
+                    .cairnRowAmount()
                     .multilineTextAlignment(.trailing)
             }
 
-            Text("\(recurringTransaction.frequency.displayName) from \(RecurringTransactionDateFormatter.dateTime(recurringTransaction.startDate))")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+            Text(recurringTransaction.direction.displayName)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(recurringTransaction.direction == .inflow ? CairnColor.positive : CairnColor.negative)
 
-            if let endDate = recurringTransaction.endDate {
-                Text("Ends \(RecurringTransactionDateFormatter.dateTime(endDate))")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
+            Text(accountName)
+                .font(.subheadline)
+                .foregroundStyle(CairnColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(recurringTransaction.frequency.displayName)
+                .font(.footnote)
+                .foregroundStyle(CairnColor.textSecondary)
 
             if let nextOccurrence {
                 Text("Next \(RecurringTransactionDateFormatter.dateTime(nextOccurrence))")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(CairnColor.textSecondary)
             } else {
                 Text("No next occurrence")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(CairnColor.textSecondary)
             }
 
-            if let memo = recurringTransaction.memo {
-                Text(memo)
+            Text("Starts \(RecurringTransactionDateFormatter.dateTime(recurringTransaction.startDate))")
+                .font(.footnote)
+                .foregroundStyle(CairnColor.textTertiary)
+
+            if let endDate = recurringTransaction.endDate {
+                Text("Ends \(RecurringTransactionDateFormatter.dateTime(endDate))")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                    .foregroundStyle(CairnColor.textTertiary)
             }
         }
+        .frame(minHeight: 44)
         .contentShape(Rectangle())
     }
 }

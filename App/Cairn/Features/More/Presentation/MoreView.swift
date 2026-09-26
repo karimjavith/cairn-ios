@@ -14,18 +14,46 @@ struct MoreView: View {
     let budgetRepository: any BudgetRepository
     let goalRepository: any GoalRepository
     let recurringTransactionRepository: any RecurringTransactionRepository
+    let creditScoreRepository: any CreditScoreRepository
     let calculateGoalProgress: CalculateGoalProgress
     let recurringTransactionCalendar: Calendar
 
     var body: some View {
-        List {
-            ForEach(MoreDestination.allCases) { destination in
-                NavigationLink(value: destination) {
-                    Label(destination.title, systemImage: destination.systemImage)
+        ZStack {
+            CairnColor.canvas
+                .ignoresSafeArea()
+
+            List {
+                ForEach(MoreDestination.allCases) { destination in
+                    NavigationLink(value: destination) {
+                        HStack(spacing: CairnSpacing.medium) {
+                            Image(systemName: destination.systemImage)
+                                .font(.body.weight(.medium))
+                                .foregroundStyle(CairnColor.plum)
+                                .frame(width: 28)
+                                .accessibilityHidden(true)
+
+                            Text(destination.title)
+                                .font(.body.weight(.medium))
+                                .foregroundStyle(CairnColor.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    }
+                    .accessibilityLabel(destination.title)
+                    .listRowInsets(EdgeInsets(
+                        top: CairnSpacing.small,
+                        leading: CairnSpacing.extraLarge,
+                        bottom: CairnSpacing.small,
+                        trailing: CairnSpacing.extraLarge
+                    ))
+                    .listRowBackground(CairnColor.canvas)
                 }
             }
+            .scrollContentBackground(.hidden)
         }
         .navigationTitle("More")
+        .tint(CairnColor.plum)
         .navigationDestination(for: MoreDestination.self) { destination in
             moreDestinationView(for: destination)
         }
@@ -51,6 +79,8 @@ struct MoreView: View {
                 accountRepository: accountRepository,
                 calendar: recurringTransactionCalendar
             )
+        case .creditScore:
+            CreditScoresView(repository: creditScoreRepository)
         }
     }
 }

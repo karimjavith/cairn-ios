@@ -37,6 +37,7 @@ struct RecurringTransactionEditorView: View {
                     TextField("Amount", text: $editor.amountText)
                         .keyboardType(.decimalPad)
                         .textInputAutocapitalization(.never)
+                        .monospacedDigit()
 
                     Picker("Frequency", selection: $editor.frequency) {
                         ForEach(RecurrenceFrequency.allCases, id: \.self) { frequency in
@@ -63,13 +64,24 @@ struct RecurringTransactionEditorView: View {
 
                 if let errorMessage = editor.errorMessage {
                     Section {
-                        Text(errorMessage)
-                            .foregroundStyle(.secondary)
-                            .accessibilityLabel(errorMessage)
+                        Label {
+                            Text(errorMessage)
+                                .foregroundStyle(CairnColor.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        } icon: {
+                            Image(systemName: "exclamationmark.triangle")
+                                .foregroundStyle(CairnColor.warning)
+                                .accessibilityHidden(true)
+                        }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(errorMessage)
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(CairnColor.canvas)
             .navigationTitle(editor.title)
+            .tint(CairnColor.plum)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: cancel)
@@ -82,6 +94,7 @@ struct RecurringTransactionEditorView: View {
                     } label: {
                         if editor.isSaving {
                             ProgressView()
+                                .tint(CairnColor.plum)
                         } else {
                             Text("Save")
                         }

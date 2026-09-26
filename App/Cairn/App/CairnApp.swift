@@ -46,6 +46,7 @@ struct CairnApp: App {
         let budgetRepository = SwiftDataBudgetRepository(modelContainer: modelContainer)
         let goalRepository = SwiftDataGoalRepository(modelContainer: modelContainer)
         let recurringTransactionRepository = SwiftDataRecurringTransactionRepository(modelContainer: modelContainer)
+        let creditScoreRepository = SwiftDataCreditScoreRepository(modelContainer: modelContainer)
 
         return AppDependencies(
             accountRepository: accountRepository,
@@ -54,6 +55,7 @@ struct CairnApp: App {
             budgetRepository: budgetRepository,
             goalRepository: goalRepository,
             recurringTransactionRepository: recurringTransactionRepository,
+            creditScoreRepository: creditScoreRepository,
             recurringTransactionCalendar: .autoupdatingCurrent,
             dashboardCalendar: .autoupdatingCurrent
         )
@@ -83,7 +85,7 @@ struct CairnApp: App {
     #endif
 
     private static func makeModelContainer() throws -> ModelContainer {
-        let schema = Schema(versionedSchema: CairnSchemaV1.self)
+        let schema = Schema(versionedSchema: CairnSchemaV2.self)
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         return try ModelContainer(

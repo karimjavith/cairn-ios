@@ -19,11 +19,12 @@ struct CairnSchemaMigrationPlanTests {
             CairnSchemaV1.CategoryRecord.self,
             CairnSchemaV1.GoalRecord.self,
             CairnSchemaV1.RecurringTransactionRecord.self,
-            CairnSchemaV1.TransactionRecord.self
+            CairnSchemaV1.TransactionRecord.self,
+            CreditScoreRecord.self
         ]
 
-        #expect(CairnSchemaV1.versionIdentifier == Schema.Version(1, 0, 0))
-        #expect(modelIdentifiers(CairnSchemaV1.models) == modelIdentifiers(expectedModels))
+        #expect(CairnSchemaV2.versionIdentifier == Schema.Version(2, 0, 0))
+        #expect(modelIdentifiers(CairnSchemaV2.models) == modelIdentifiers(expectedModels))
     }
 
     @Test func currentApplicationRecordNamesResolveToCurrentSchemaVersion() {
@@ -38,15 +39,18 @@ struct CairnSchemaMigrationPlanTests {
         #expect(ObjectIdentifier(TransactionRecord.self) == ObjectIdentifier(CairnSchemaV1.TransactionRecord.self))
     }
 
-    @Test func migrationPlanExposesCurrentSchemaOnly() {
-        #expect(schemaIdentifiers(CairnSchemaMigrationPlan.schemas) == schemaIdentifiers([CairnSchemaV1.self]))
-        #expect(CairnSchemaMigrationPlan.stages.isEmpty)
+    @Test func migrationPlanIncludesLightweightCreditScoreAddition() {
+        #expect(schemaIdentifiers(CairnSchemaMigrationPlan.schemas) == schemaIdentifiers([
+            CairnSchemaV1.self,
+            CairnSchemaV2.self
+        ]))
+        #expect(CairnSchemaMigrationPlan.stages.count == 1)
     }
 
     @Test func versionedModelContainerCanBeCreated() throws {
         let container = try makeVersionedContainer(isStoredInMemoryOnly: true)
 
-        #expect(container.schema.version == CairnSchemaV1.versionIdentifier)
+        #expect(container.schema.version == CairnSchemaV2.versionIdentifier)
         #expect(String(reflecting: container.migrationPlan) == String(reflecting: Optional(CairnSchemaMigrationPlan.self)))
     }
 
@@ -139,11 +143,45 @@ struct CairnSchemaMigrationPlanTests {
         #expect(recurringTransaction.memo == nil)
     }
 
+    @Test func versionOneStoreMigratesToVersionTwoWithoutLosingData() throws {
+        let storeURL = temporaryStoreURL()
+        let accountID = UUID()
+
+        do {
+            let schema = Schema(versionedSchema: CairnSchemaV1.self)
+            let configuration = ModelConfiguration(schema: schema, url: storeURL)
+            let container = try ModelContainer(
+                for: schema,
+                migrationPlan: CairnSchemaMigrationPlan.self,
+                configurations: [configuration]
+            )
+            let context = ModelContext(container)
+            context.insert(AccountRecord(
+                id: accountID,
+                name: "Existing Account",
+                type: "checking",
+                currencyCode: "GBP",
+                openingBalanceAmount: "123.45"
+            ))
+            try context.save()
+        }
+
+        let migratedContainer = try makeVersionedContainer(storeURL: storeURL)
+        let context = ModelContext(migratedContainer)
+        let accounts = try context.fetch(FetchDescriptor<AccountRecord>())
+        let scores = try context.fetch(FetchDescriptor<CreditScoreRecord>())
+
+        #expect(accounts.count == 1)
+        #expect(accounts.first?.id == accountID)
+        #expect(accounts.first?.name == "Existing Account")
+        #expect(scores.isEmpty)
+    }
+
     private func makeVersionedContainer(
         isStoredInMemoryOnly: Bool = false,
         storeURL: URL? = nil
     ) throws -> ModelContainer {
-        let schema = Schema(versionedSchema: CairnSchemaV1.self)
+        let schema = Schema(versionedSchema: CairnSchemaV2.self)
         let configuration: ModelConfiguration
 
         if let storeURL {

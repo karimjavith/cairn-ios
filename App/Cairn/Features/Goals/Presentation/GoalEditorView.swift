@@ -22,10 +22,12 @@ struct GoalEditorView: View {
                     TextField("Target Amount", text: $editor.targetAmountText)
                         .keyboardType(.decimalPad)
                         .textInputAutocapitalization(.never)
+                        .monospacedDigit()
 
                     TextField("Current Amount", text: $editor.currentAmountText)
                         .keyboardType(.decimalPad)
                         .textInputAutocapitalization(.never)
+                        .monospacedDigit()
 
                     TextField("Currency", text: $editor.currencyCode)
                         .textInputAutocapitalization(.characters)
@@ -42,13 +44,24 @@ struct GoalEditorView: View {
 
                 if let errorMessage = editor.errorMessage {
                     Section {
-                        Text(errorMessage)
-                            .foregroundStyle(.secondary)
-                            .accessibilityLabel(errorMessage)
+                        Label {
+                            Text(errorMessage)
+                                .foregroundStyle(CairnColor.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        } icon: {
+                            Image(systemName: "exclamationmark.triangle")
+                                .foregroundStyle(CairnColor.warning)
+                                .accessibilityHidden(true)
+                        }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(errorMessage)
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(CairnColor.canvas)
             .navigationTitle(editor.title)
+            .tint(CairnColor.plum)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: cancel)
@@ -61,6 +74,7 @@ struct GoalEditorView: View {
                     } label: {
                         if editor.isSaving {
                             ProgressView()
+                                .tint(CairnColor.plum)
                         } else {
                             Text("Save")
                         }

@@ -24,7 +24,8 @@ struct AppNavigationShellTests {
         #expect(MoreDestination.allCases.map(\.title) == [
             "Goals",
             "Categories",
-            "Recurring Transactions"
+            "Recurring Transactions",
+            "Credit Score"
         ])
     }
 
@@ -36,10 +37,16 @@ struct AppNavigationShellTests {
             budgetRepository: ShellBudgetRepository(),
             goalRepository: ShellGoalRepository(),
             recurringTransactionRepository: ShellRecurringTransactionRepository(),
+            creditScoreRepository: ShellCreditScoreRepository(),
             recurringTransactionCalendar: .init(identifier: .gregorian),
             dashboardCalendar: .init(identifier: .gregorian)
         ))
     }
+}
+
+private actor ShellCreditScoreRepository: CreditScoreRepository {
+    func fetchScores() async throws -> [CreditScore] { [] }
+    func save(_ score: CreditScore) async throws {}
 }
 
 private actor ShellAccountRepository: AccountRepository {

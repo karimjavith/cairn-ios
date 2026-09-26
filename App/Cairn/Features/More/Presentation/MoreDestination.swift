@@ -11,6 +11,7 @@ enum MoreDestination: String, CaseIterable, Identifiable {
     case goals
     case categories
     case recurringTransactions
+    case creditScore
 
     var id: Self { self }
 
@@ -22,6 +23,8 @@ enum MoreDestination: String, CaseIterable, Identifiable {
             "Categories"
         case .recurringTransactions:
             "Recurring Transactions"
+        case .creditScore:
+            "Credit Score"
         }
     }
 
@@ -33,6 +36,8 @@ enum MoreDestination: String, CaseIterable, Identifiable {
             "tag"
         case .recurringTransactions:
             "repeat"
+        case .creditScore:
+            "gauge"
         }
     }
 }

@@ -14,6 +14,7 @@ struct AppDependencies {
     let budgetRepository: any BudgetRepository
     let goalRepository: any GoalRepository
     let recurringTransactionRepository: any RecurringTransactionRepository
+    let creditScoreRepository: any CreditScoreRepository
     let recurringTransactionCalendar: Calendar
     let dashboardCalendar: Calendar
     let calculateAccountBalance: CalculateAccountBalance
@@ -29,6 +30,7 @@ struct AppDependencies {
         budgetRepository: any BudgetRepository,
         goalRepository: any GoalRepository,
         recurringTransactionRepository: any RecurringTransactionRepository,
+        creditScoreRepository: any CreditScoreRepository,
         recurringTransactionCalendar: Calendar,
         dashboardCalendar: Calendar
     ) {
@@ -38,6 +40,7 @@ struct AppDependencies {
         self.budgetRepository = budgetRepository
         self.goalRepository = goalRepository
         self.recurringTransactionRepository = recurringTransactionRepository
+        self.creditScoreRepository = creditScoreRepository
         self.recurringTransactionCalendar = recurringTransactionCalendar
         self.dashboardCalendar = dashboardCalendar
         calculateAccountBalance = CalculateAccountBalance(

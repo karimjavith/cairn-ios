@@ -24,14 +24,25 @@ enum CairnSchemaV1: VersionedSchema {
     }
 }
 
+enum CairnSchemaV2: VersionedSchema {
+    static var versionIdentifier: Schema.Version {
+        Schema.Version(2, 0, 0)
+    }
+
+    static var models: [any PersistentModel.Type] {
+        CairnSchemaV1.models + [CreditScoreRecord.self]
+    }
+}
+
 enum CairnSchemaMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
         [
-            CairnSchemaV1.self
+            CairnSchemaV1.self,
+            CairnSchemaV2.self
         ]
     }
 
     static var stages: [MigrationStage] {
-        []
+        [MigrationStage.lightweight(fromVersion: CairnSchemaV1.self, toVersion: CairnSchemaV2.self)]
     }
 }

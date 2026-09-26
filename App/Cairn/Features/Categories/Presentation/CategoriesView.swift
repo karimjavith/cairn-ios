@@ -25,9 +25,14 @@ struct CategoriesView: View {
     var body: some View {
         @Bindable var store = store
 
-        Group {
+        ZStack {
+            CairnColor.canvas
+                .ignoresSafeArea()
+
             if store.isLoading {
                 ProgressView("Loading categories")
+                    .tint(CairnColor.plum)
+                    .foregroundStyle(CairnColor.textSecondary)
             } else if store.hasLoadFailed, let errorMessage = store.errorMessage {
                 LoadFailureView(
                     title: "Categories Unavailable",
@@ -38,17 +43,15 @@ struct CategoriesView: View {
                         }
                     }
                 )
+                .padding(.horizontal, CairnSpacing.extraLarge)
             } else if store.isEmpty {
-                ContentUnavailableView(
-                    "No Categories",
-                    systemImage: "tag",
-                    description: Text("Add your first category to organize transactions and budgets.")
-                )
+                emptyCategoriesView
             } else {
                 categoryList
             }
         }
         .navigationTitle("Categories")
+        .tint(CairnColor.plum)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -60,13 +63,21 @@ struct CategoriesView: View {
         }
         .safeAreaInset(edge: .bottom) {
             if let errorMessage = store.errorMessage, !store.hasLoadFailed {
-                Text(errorMessage)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .background(.bar)
-                    .accessibilityLabel(errorMessage)
+                Label {
+                    Text(errorMessage)
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(CairnColor.warning)
+                        .accessibilityHidden(true)
+                }
+                .font(.subheadline)
+                .foregroundStyle(CairnColor.textPrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(CairnSpacing.large)
+                .background(CairnColor.lavenderSurface)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(errorMessage)
             }
         }
         .sheet(item: $store.editor) { editor in
@@ -101,28 +112,65 @@ struct CategoriesView: View {
                 store.cancelDelete()
             }
         } message: { category in
-            Text("This cannot be undone.")
+            Text("This deletes \(category.name). This cannot be undone.")
         }
         .task {
             await store.loadCategories()
         }
     }
 
-    private var categoryList: some View {
-        List(store.categories, id: \.id) { category in
-            CategoryRowView(
-                category: category,
-                edit: { store.startEditing(category) }
+    private var emptyCategoriesView: some View {
+        ScrollView {
+            CairnEmptyStateView(
+                title: "No categories yet",
+                message: "Add a category to organize transactions and budgets.",
+                systemImage: "tag",
+                actionLabel: "Add category",
+                action: { store.startCreateCategory() }
             )
-            .swipeActions {
-                Button(role: .destructive) {
-                    store.requestDelete(category)
-                } label: {
-                    Label("Delete \(category.name)", systemImage: "trash")
+            .padding(.horizontal, CairnSpacing.extraLarge)
+            .padding(.top, CairnSpacing.section)
+        }
+    }
+
+    private var categoryList: some View {
+        List {
+            CairnSectionHeading(
+                "Your categories",
+                subtitle: store.categories.count == 1 ? "1 category" : "\(store.categories.count) categories"
+            )
+                .listRowInsets(EdgeInsets(
+                    top: CairnSpacing.large,
+                    leading: CairnSpacing.extraLarge,
+                    bottom: CairnSpacing.medium,
+                    trailing: CairnSpacing.extraLarge
+                ))
+                .listRowSeparator(.hidden)
+                .listRowBackground(CairnColor.canvas)
+
+            ForEach(store.categories, id: \.id) { category in
+                CategoryRowView(
+                    category: category,
+                    edit: { store.startEditing(category) }
+                )
+                .listRowInsets(EdgeInsets(
+                    top: CairnSpacing.small,
+                    leading: CairnSpacing.extraLarge,
+                    bottom: CairnSpacing.small,
+                    trailing: CairnSpacing.extraLarge
+                ))
+                .listRowBackground(CairnColor.canvas)
+                .swipeActions {
+                    Button(role: .destructive) {
+                        store.requestDelete(category)
+                    } label: {
+                        Label("Delete \(category.name)", systemImage: "trash")
+                    }
+                    .accessibilityLabel("Delete \(category.name)")
                 }
-                .accessibilityLabel("Delete \(category.name)")
             }
         }
+        .scrollContentBackground(.hidden)
     }
 }
 
@@ -132,14 +180,17 @@ private struct CategoryRowView: View {
 
     var body: some View {
         Button(action: edit) {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: CairnSpacing.extraSmall) {
                 Text(category.name)
-                    .font(.body)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(CairnColor.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(category.kind.displayName)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(category.kind == .income ? CairnColor.positive : CairnColor.negative)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minHeight: 44)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

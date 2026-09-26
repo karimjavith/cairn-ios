@@ -36,6 +36,7 @@ struct RootView: View {
                 accountRepository: dependencies.accountRepository,
                 budgetRepository: dependencies.budgetRepository,
                 goalRepository: dependencies.goalRepository,
+                creditScoreRepository: dependencies.creditScoreRepository,
                 categoryRepository: dependencies.categoryRepository,
                 transactionRepository: dependencies.transactionRepository,
                 calculateAccountBalance: dependencies.calculateAccountBalance,
@@ -81,6 +82,7 @@ struct RootView: View {
                 budgetRepository: dependencies.budgetRepository,
                 goalRepository: dependencies.goalRepository,
                 recurringTransactionRepository: dependencies.recurringTransactionRepository,
+                creditScoreRepository: dependencies.creditScoreRepository,
                 calculateGoalProgress: dependencies.calculateGoalProgress,
                 recurringTransactionCalendar: dependencies.recurringTransactionCalendar
             )
