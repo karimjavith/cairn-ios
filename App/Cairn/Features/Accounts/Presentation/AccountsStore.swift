@@ -218,6 +218,10 @@ final class AccountEditorState: Identifiable {
         }
     }
 
+    var canSave: Bool {
+        !isSaving && (try? makeAccount()) != nil
+    }
+
     func makeAccount() throws -> Account {
         let amount = try AccountMoneyTextParser.parse(openingBalanceText, locale: locale)
         let money = try Money(amount: amount, currencyCode: currencyCode)

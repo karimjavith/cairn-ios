@@ -133,59 +133,100 @@ struct CreditScoresView: View {
 }
 
 private struct CreditScoreEditorView: View {
+    private enum Field: Hashable {
+        case value
+    }
+
     @Bindable var editor: CreditScoreEditorState
     let cancel: () -> Void
     let save: () -> Void
+    @FocusState private var focusedField: Field?
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextField("Credit Score", text: $editor.valueText)
-                        .keyboardType(.numberPad)
-                        .monospacedDigit()
+        CairnEditorScaffold(
+            title: editor.isEditing ? "Update Credit Score" : "Add Credit Score",
+            saveAccessibilityLabel: "Save credit score",
+            isSaving: editor.isSaving,
+            canSave: editor.canSave,
+            cancel: cancel,
+            save: save
+        ) {
+            Section {
+                LabeledContent("Provider", value: editor.provider.displayName)
 
-                    if CreditScoreScale.available(for: editor.provider).count > 1 {
-                        Picker("Score scale", selection: $editor.scale) {
-                            Text("Select score scale").tag(CreditScoreScale?.none)
-                            ForEach(CreditScoreScale.available(for: editor.provider), id: \.self) { scale in
-                                Text("0–\(scale.maximum)").tag(Optional(scale))
-                            }
+                VStack(alignment: .leading, spacing: CairnSpacing.small) {
+                    Text("Score")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(CairnColor.textPrimary)
+
+                    TextField("Enter score", text: $editor.valueText)
+                        .keyboardType(.numberPad)
+                        .textInputAutocapitalization(.never)
+                        .focused($focusedField, equals: .value)
+                        .monospacedDigit()
+                        .accessibilityLabel("Credit score")
+                        .accessibilityHint(scoreAccessibilityHint)
+                }
+
+                if availableScales.count > 1 {
+                    Picker("Score scale", selection: $editor.scale) {
+                        Text("Select score scale").tag(CreditScoreScale?.none)
+                        ForEach(availableScales, id: \.self) { scale in
+                            Text(scaleLabel(scale)).tag(Optional(scale))
                         }
                     }
-                } header: {
-                    Text(editor.provider.displayName)
-                } footer: {
-                    if let scale = editor.scale {
-                        Text("Enter a whole number from 0 to \(scale.maximum). This score is entered manually and stays on this device.")
-                    } else {
-                        Text("Select the score scale shown by your provider. This score is entered manually and stays on this device.")
-                    }
+                    .accessibilityHint("Select the score range shown by your provider.")
+                } else if let scale = editor.scale {
+                    LabeledContent("Score scale", value: scaleLabel(scale))
                 }
-
-                if let errorMessage = editor.errorMessage {
-                    Section {
-                        Text(errorMessage)
-                            .foregroundStyle(CairnColor.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityLabel(errorMessage)
-                    }
-                }
+            } header: {
+                CairnEditorSectionHeader(title: "Score details")
+            } footer: {
+                CairnEditorSupportingText(text: supportingText)
             }
-            .scrollContentBackground(.hidden)
-            .background(CairnColor.canvas)
-            .navigationTitle(editor.isEditing ? "Update Credit Score" : "Add Credit Score")
-            .tint(CairnColor.plum)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: cancel).disabled(editor.isSaving)
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save", action: save)
-                        .disabled(!editor.canSave)
-                        .accessibilityLabel("Save credit score")
+
+            if let errorMessage = editor.errorMessage {
+                Section {
+                    CairnFormErrorView(message: errorMessage)
                 }
             }
         }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    focusedField = nil
+                }
+            }
+        }
+        .task {
+            if !editor.isEditing {
+                focusedField = .value
+            }
+        }
+    }
+
+    private var availableScales: [CreditScoreScale] {
+        CreditScoreScale.available(for: editor.provider)
+    }
+
+    private var supportingText: String {
+        if let scale = editor.scale {
+            "Enter a whole number from 0 to \(scale.maximum). This score is entered manually and stays on this device."
+        } else {
+            "Select the score scale shown by your provider. This score is entered manually and stays on this device."
+        }
+    }
+
+    private var scoreAccessibilityHint: String {
+        if let scale = editor.scale {
+            "Enter a whole number from 0 to \(scale.maximum)."
+        } else {
+            "Select a score scale, then enter the whole-number score."
+        }
+    }
+
+    private func scaleLabel(_ scale: CreditScoreScale) -> String {
+        "0–\(scale.maximum)"
     }
 }

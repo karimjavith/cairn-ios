@@ -108,6 +108,39 @@ struct AccountsStoreTests {
         #expect(store.editor?.mode == .create)
     }
 
+    @Test func accountEditorCanSaveOnlyValidInputWhileIdle() throws {
+        let store = makeStore(locale: dotDecimalLocale)
+
+        store.startCreateAccount()
+        let editor = try #require(store.editor)
+        #expect(editor.canSave == false)
+
+        editor.name = "Everyday"
+        editor.openingBalanceText = "10.25"
+        editor.currencyCode = "GBP"
+        #expect(editor.canSave)
+
+        editor.currencyCode = "invalid"
+        #expect(editor.canSave == false)
+
+        editor.currencyCode = "GBP"
+        editor.isSaving = true
+        #expect(editor.canSave == false)
+    }
+
+    @Test func accountEditorAllowsNegativeOpeningBalance() throws {
+        let store = makeStore(locale: dotDecimalLocale)
+
+        store.startCreateAccount()
+        let editor = try #require(store.editor)
+        editor.name = "Credit card"
+        editor.openingBalanceText = "-125.50"
+        editor.currencyCode = "GBP"
+
+        #expect(editor.canSave)
+        #expect(try editor.makeAccount().openingBalance.amount == decimal("-125.50"))
+    }
+
     @Test func loadsAccountsPreservingRepositoryOrder() async throws {
         let zeta = try makeAccount(name: "Zeta")
         let alpha = try makeAccount(name: "Alpha")

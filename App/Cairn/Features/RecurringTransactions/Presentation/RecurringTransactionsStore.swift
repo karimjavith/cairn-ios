@@ -266,6 +266,10 @@ final class RecurringTransactionEditorState: Identifiable {
         }
     }
 
+    var canSave: Bool {
+        !isSaving && (try? makeRecurringTransaction()) != nil
+    }
+
     func makeRecurringTransaction() throws -> RecurringTransaction {
         guard let selectedAccountID,
               let account = accounts.first(where: { $0.id == selectedAccountID }) else {

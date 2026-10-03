@@ -237,6 +237,10 @@ final class BudgetEditorState: Identifiable {
         }
     }
 
+    var canSave: Bool {
+        !isSaving && (try? makeBudget()) != nil
+    }
+
     func makeBudget() throws -> Budget {
         guard let selectedCategoryID else {
             throw ValidationError.missingCategory

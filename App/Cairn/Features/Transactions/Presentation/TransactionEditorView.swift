@@ -8,89 +8,128 @@
 import SwiftUI
 
 struct TransactionEditorView: View {
+    private enum Field: Hashable {
+        case amount
+        case memo
+    }
+
     @Bindable var editor: TransactionEditorState
     let cancel: () -> Void
     let save: () -> Void
+    @FocusState private var focusedField: Field?
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Transaction") {
-                    Picker("Account", selection: $editor.selectedAccountID) {
-                        if editor.accounts.isEmpty {
-                            Text("No Accounts").tag(AccountID?.none)
-                        }
+        CairnEditorScaffold(
+            title: editor.title,
+            saveAccessibilityLabel: "Save Transaction",
+            isSaving: editor.isSaving,
+            canSave: editor.canSave,
+            cancel: cancel,
+            save: save
+        ) {
+            Section {
+                VStack(alignment: .leading, spacing: CairnSpacing.small) {
+                    Text("Transaction type")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(CairnColor.textPrimary)
 
-                        ForEach(editor.accounts, id: \.id) { account in
-                            Text(account.name)
-                                .tag(Optional(account.id))
-                        }
-                    }
-
-                    Picker("Direction", selection: $editor.direction) {
+                    Picker("Transaction type", selection: $editor.direction) {
                         ForEach(TransactionDirection.allCases, id: \.self) { direction in
                             Text(direction.displayName)
                                 .tag(direction)
                         }
                     }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                }
 
-                    TextField("Amount", text: $editor.amountText)
-                        .keyboardType(.decimalPad)
+                VStack(alignment: .leading, spacing: CairnSpacing.small) {
+                    Text("Amount")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(CairnColor.textPrimary)
+
+                    TextField("0.00", text: $editor.amountText)
+                        .keyboardType(.numbersAndPunctuation)
                         .textInputAutocapitalization(.never)
-
-                    DatePicker("Date", selection: $editor.occurredAt)
-                }
-
-                Section("Category") {
-                    Picker("Category", selection: $editor.selectedCategoryID) {
-                        Text("Uncategorized")
-                            .tag(CategoryID?.none)
-
-                        ForEach(editor.categories, id: \.id) { category in
-                            Text(category.name)
-                                .tag(Optional(category.id))
+                        .focused($focusedField, equals: .amount)
+                        .submitLabel(.next)
+                        .onSubmit {
+                            focusedField = .memo
                         }
+                        .monospacedDigit()
+                        .accessibilityLabel("Transaction amount")
+                        .accessibilityHint("Enter the amount of the transaction.")
+                }
+
+                Picker("Account", selection: $editor.selectedAccountID) {
+                    if editor.accounts.isEmpty {
+                        Text("No accounts").tag(AccountID?.none)
+                    }
+
+                    ForEach(editor.accounts, id: \.id) { account in
+                        Text(account.name)
+                            .tag(Optional(account.id))
                     }
                 }
 
-                Section("Memo") {
-                    TextField("Memo", text: $editor.memo, axis: .vertical)
+                DatePicker(
+                    "Date and time",
+                    selection: $editor.occurredAt,
+                    displayedComponents: [.date, .hourAndMinute]
+                )
+            } header: {
+                CairnEditorSectionHeader(title: "Transaction details")
+            }
+
+            Section {
+                Picker("Category", selection: $editor.selectedCategoryID) {
+                    Text("Uncategorized")
+                        .tag(CategoryID?.none)
+
+                    ForEach(editor.categories, id: \.id) { category in
+                        Text(category.name)
+                            .tag(Optional(category.id))
+                    }
+                }
+            } header: {
+                CairnEditorSectionHeader(title: "Category")
+            }
+
+            Section {
+                VStack(alignment: .leading, spacing: CairnSpacing.small) {
+                    Text("Memo")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(CairnColor.textPrimary)
+
+                    TextField("Optional", text: $editor.memo, axis: .vertical)
                         .lineLimit(1...4)
+                        .focused($focusedField, equals: .memo)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            focusedField = nil
+                        }
                 }
+            } header: {
+                CairnEditorSectionHeader(title: "Note")
+            }
 
-                if let errorMessage = editor.errorMessage {
-                    Section {
-                        Text(errorMessage)
-                            .foregroundStyle(.secondary)
-                            .accessibilityLabel(errorMessage)
-                    }
+            if let errorMessage = editor.errorMessage {
+                Section {
+                    CairnFormErrorView(message: errorMessage)
                 }
             }
-            .navigationTitle(editor.title)
-            .contentMargins(.top, CairnSpacing.small, for: .scrollContent)
-            .listSectionSpacing(CairnSpacing.medium)
-            .scrollContentBackground(.hidden)
-            .background(CairnColor.canvas)
-            .tint(CairnColor.plum)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: cancel)
-                        .disabled(editor.isSaving)
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    focusedField = nil
                 }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        save()
-                    } label: {
-                        if editor.isSaving {
-                            ProgressView()
-                        } else {
-                            Text("Save")
-                        }
-                    }
-                    .disabled(editor.isSaving)
-                    .accessibilityLabel("Save Transaction")
-                }
+            }
+        }
+        .task {
+            if editor.mode == .create {
+                focusedField = .amount
             }
         }
     }

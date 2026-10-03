@@ -34,6 +34,16 @@ struct CreditScoresStoreTests {
         #expect(!editor.canSave)
         editor.valueText = "850"
         #expect(editor.canSave)
+        editor.isSaving = true
+        #expect(!editor.canSave)
+    }
+
+    @Test func editorRejectsScaleFromAnotherProvider() {
+        let editor = CreditScoreEditorState(provider: .equifax, existing: nil)
+        editor.scale = .experian1250
+        editor.valueText = "850"
+
+        #expect(!editor.canSave)
     }
 
     @Test func editingPreservesStoredScaleUntilExplicitlyChanged() throws {

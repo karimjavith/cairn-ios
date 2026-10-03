@@ -215,6 +215,10 @@ final class GoalEditorState: Identifiable {
         }
     }
 
+    var canSave: Bool {
+        !isSaving && (try? makeGoal()) != nil
+    }
+
     func makeGoal() throws -> Goal {
         let targetAmount = try GoalMoneyTextParser.parse(targetAmountText, locale: locale)
         let currentAmount = try GoalMoneyTextParser.parse(currentAmountText, locale: locale)

@@ -114,6 +114,33 @@ struct TransactionsStoreTests {
         #expect(store.editor?.mode == .create)
     }
 
+    @Test func transactionEditorCanSaveOnlyValidInputWhileIdle() throws {
+        let account = try makeAccount()
+        let category = try makeCategory()
+        let editor = TransactionEditorState(
+            transaction: nil,
+            accounts: [account],
+            categories: [category],
+            locale: dotDecimalLocale
+        )
+
+        #expect(editor.canSave == false)
+
+        editor.amountText = "10.25"
+        #expect(editor.canSave)
+
+        editor.selectedAccountID = nil
+        #expect(editor.canSave == false)
+
+        editor.selectedAccountID = account.id
+        editor.selectedCategoryID = CategoryID()
+        #expect(editor.canSave == false)
+
+        editor.selectedCategoryID = category.id
+        editor.isSaving = true
+        #expect(editor.canSave == false)
+    }
+
     @Test func loadsTransactionsPreservingRepositoryOrder() async throws {
         let account = try makeAccount()
         let newest = try makeTransaction(accountID: account.id, occurredAt: date(2_000), memo: "Newest")

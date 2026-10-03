@@ -78,6 +78,27 @@ struct CategoriesStoreTests {
         #expect(store.editor != nil)
     }
 
+    @Test func categoryEditorCanSaveOnlyValidInputWhileIdle() throws {
+        let store = makeStore()
+
+        store.startCreateCategory()
+        let editor = try #require(store.editor)
+        #expect(editor.canSave == false)
+
+        editor.name = "Groceries"
+        #expect(editor.canSave)
+
+        editor.name = "  \n  "
+        #expect(editor.canSave == false)
+
+        editor.name = "Salary"
+        editor.kind = .income
+        #expect(editor.canSave)
+
+        editor.isSaving = true
+        #expect(editor.canSave == false)
+    }
+
     @Test func repositorySaveFailureIsSurfaced() async throws {
         let categoryRepository = CategoriesFeatureCategoryRepository(saveError: CategoriesFeatureRepositoryError.saveFailed)
         let store = makeStore(categoryRepository: categoryRepository)

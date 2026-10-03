@@ -8,80 +8,101 @@
 import SwiftUI
 
 struct BudgetEditorView: View {
+    private enum Field: Hashable {
+        case limit
+    }
+
     @Bindable var editor: BudgetEditorState
     let cancel: () -> Void
     let save: () -> Void
+    @FocusState private var focusedField: Field?
+
+    private let currencyCodes = Locale.Currency.isoCurrencies
+        .map(\.identifier)
+        .sorted()
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Budget") {
-                    Picker("Category", selection: $editor.selectedCategoryID) {
-                        if editor.categories.isEmpty {
-                            Text("No Categories").tag(CategoryID?.none)
-                        }
-
-                        ForEach(editor.categories, id: \.id) { category in
-                            Text(category.name)
-                                .tag(Optional(category.id))
-                        }
+        CairnEditorScaffold(
+            title: editor.title,
+            saveAccessibilityLabel: "Save Budget",
+            isSaving: editor.isSaving,
+            canSave: editor.canSave,
+            cancel: cancel,
+            save: save
+        ) {
+            Section {
+                Picker("Category", selection: $editor.selectedCategoryID) {
+                    if editor.categories.isEmpty {
+                        Text("No categories").tag(CategoryID?.none)
                     }
 
-                    TextField("Limit", text: $editor.limitText)
-                        .keyboardType(.decimalPad)
+                    ForEach(editor.categories, id: \.id) { category in
+                        Text(category.name)
+                            .tag(Optional(category.id))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: CairnSpacing.small) {
+                    Text("Limit")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(CairnColor.textPrimary)
+
+                    TextField("0.00", text: $editor.limitText)
+                        .keyboardType(.numbersAndPunctuation)
                         .textInputAutocapitalization(.never)
+                        .focused($focusedField, equals: .limit)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            focusedField = nil
+                        }
                         .monospacedDigit()
-
-                    TextField("Currency", text: $editor.currencyCode)
-                        .textInputAutocapitalization(.characters)
-                        .autocorrectionDisabled()
+                        .accessibilityLabel("Budget limit")
+                        .accessibilityHint("Enter the maximum amount for this budget.")
                 }
 
-                Section("Period") {
-                    DatePicker("Start", selection: $editor.startDate)
-                    DatePicker("End", selection: $editor.endDate)
-                }
-
-                if let errorMessage = editor.errorMessage {
-                    Section {
-                        Label {
-                            Text(errorMessage)
-                                .foregroundStyle(CairnColor.textSecondary)
-                        } icon: {
-                            Image(systemName: "exclamationmark.triangle")
-                                .foregroundStyle(CairnColor.warning)
-                                .accessibilityHidden(true)
-                        }
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(errorMessage)
+                Picker("Currency", selection: $editor.currencyCode) {
+                    ForEach(currencyCodes, id: \.self) { currencyCode in
+                        Text(currencyLabel(for: currencyCode))
+                            .tag(currencyCode)
                     }
                 }
+            } header: {
+                CairnEditorSectionHeader(title: "Budget details")
             }
-            .scrollContentBackground(.hidden)
-            .background(CairnColor.canvas)
-            .navigationTitle(editor.title)
-            .tint(CairnColor.plum)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: cancel)
-                        .disabled(editor.isSaving)
-                }
 
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        save()
-                    } label: {
-                        if editor.isSaving {
-                            ProgressView()
-                                .tint(CairnColor.plum)
-                        } else {
-                            Text("Save")
-                        }
-                    }
-                    .disabled(editor.isSaving)
-                    .accessibilityLabel("Save Budget")
+            Section {
+                DatePicker("Start", selection: $editor.startDate)
+                DatePicker("End", selection: $editor.endDate)
+            } header: {
+                CairnEditorSectionHeader(title: "Period")
+            }
+
+            if let errorMessage = editor.errorMessage {
+                Section {
+                    CairnFormErrorView(message: errorMessage)
                 }
             }
         }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    focusedField = nil
+                }
+            }
+        }
+        .task {
+            if editor.mode == .create {
+                focusedField = .limit
+            }
+        }
+    }
+
+    private func currencyLabel(for currencyCode: String) -> String {
+        guard let currencyName = Locale.current.localizedString(forCurrencyCode: currencyCode) else {
+            return currencyCode
+        }
+
+        return "\(currencyCode) — \(currencyName)"
     }
 }

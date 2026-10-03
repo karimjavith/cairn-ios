@@ -90,8 +90,7 @@ final class CreditScoreEditorState: Identifiable {
     }
 
     var canSave: Bool {
-        guard let scale, let value = parsedValue else { return false }
-        return !isSaving && (0...scale.maximum).contains(value)
+        !isSaving && (try? makeScore(updatedAt: .distantPast)) != nil
     }
 
     func makeScore(updatedAt: Date) throws -> CreditScore {

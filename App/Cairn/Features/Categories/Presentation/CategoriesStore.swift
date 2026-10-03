@@ -177,6 +177,10 @@ final class CategoryEditorState: Identifiable {
         }
     }
 
+    var canSave: Bool {
+        !isSaving && (try? makeCategory()) != nil
+    }
+
     func makeCategory() throws -> Category {
         try Category(
             id: id,

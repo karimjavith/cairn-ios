@@ -8,100 +8,137 @@
 import SwiftUI
 
 struct RecurringTransactionEditorView: View {
+    private enum Field: Hashable {
+        case amount
+        case memo
+    }
+
     @Bindable var editor: RecurringTransactionEditorState
     let cancel: () -> Void
     let save: () -> Void
+    @FocusState private var focusedField: Field?
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Recurring Transaction") {
-                    Picker("Account", selection: $editor.selectedAccountID) {
-                        if editor.accounts.isEmpty {
-                            Text("No Accounts").tag(AccountID?.none)
-                        }
+        CairnEditorScaffold(
+            title: editor.title,
+            saveAccessibilityLabel: "Save Recurring Transaction",
+            isSaving: editor.isSaving,
+            canSave: editor.canSave,
+            cancel: cancel,
+            save: save
+        ) {
+            Section {
+                VStack(alignment: .leading, spacing: CairnSpacing.small) {
+                    Text("Transaction type")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(CairnColor.textPrimary)
 
-                        ForEach(editor.accounts, id: \.id) { account in
-                            Text(account.name)
-                                .tag(Optional(account.id))
-                        }
-                    }
-
-                    Picker("Direction", selection: $editor.direction) {
+                    Picker("Transaction type", selection: $editor.direction) {
                         ForEach(TransactionDirection.allCases, id: \.self) { direction in
                             Text(direction.displayName)
                                 .tag(direction)
                         }
                     }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                }
 
-                    TextField("Amount", text: $editor.amountText)
-                        .keyboardType(.decimalPad)
+                VStack(alignment: .leading, spacing: CairnSpacing.small) {
+                    Text("Amount")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(CairnColor.textPrimary)
+
+                    TextField("0.00", text: $editor.amountText)
+                        .keyboardType(.numbersAndPunctuation)
                         .textInputAutocapitalization(.never)
+                        .focused($focusedField, equals: .amount)
+                        .submitLabel(.next)
+                        .onSubmit {
+                            focusedField = .memo
+                        }
                         .monospacedDigit()
+                        .accessibilityLabel("Recurring transaction amount")
+                        .accessibilityHint("Enter the amount for each recurring transaction.")
+                }
 
-                    Picker("Frequency", selection: $editor.frequency) {
-                        ForEach(RecurrenceFrequency.allCases, id: \.self) { frequency in
-                            Text(frequency.displayName)
-                                .tag(frequency)
-                        }
+                Picker("Account", selection: $editor.selectedAccountID) {
+                    if editor.accounts.isEmpty {
+                        Text("No accounts").tag(AccountID?.none)
+                    }
+
+                    ForEach(editor.accounts, id: \.id) { account in
+                        Text(account.name)
+                            .tag(Optional(account.id))
+                    }
+                }
+                .accessibilityHint("Select the account used by this recurring transaction.")
+            } header: {
+                CairnEditorSectionHeader(title: "Transaction details")
+            }
+
+            Section {
+                Picker("Frequency", selection: $editor.frequency) {
+                    ForEach(RecurrenceFrequency.allCases, id: \.self) { frequency in
+                        Text(frequency.displayName)
+                            .tag(frequency)
                     }
                 }
 
-                Section("Schedule") {
-                    DatePicker("Start Date", selection: $editor.startDate)
+                DatePicker(
+                    "Start",
+                    selection: $editor.startDate,
+                    displayedComponents: [.date, .hourAndMinute]
+                )
 
-                    Toggle("End Date", isOn: $editor.hasEndDate)
+                Toggle("Use end date", isOn: $editor.hasEndDate)
 
-                    if editor.hasEndDate {
-                        DatePicker("End Date", selection: $editor.endDate)
-                    }
+                if editor.hasEndDate {
+                    DatePicker(
+                        "End",
+                        selection: $editor.endDate,
+                        displayedComponents: [.date, .hourAndMinute]
+                    )
                 }
+            } header: {
+                CairnEditorSectionHeader(title: "Schedule")
+            }
 
-                Section("Memo") {
-                    TextField("Memo", text: $editor.memo, axis: .vertical)
+            Section {
+                VStack(alignment: .leading, spacing: CairnSpacing.small) {
+                    Text("Memo")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(CairnColor.textPrimary)
+
+                    TextField("Optional", text: $editor.memo, axis: .vertical)
                         .lineLimit(1...4)
-                }
-
-                if let errorMessage = editor.errorMessage {
-                    Section {
-                        Label {
-                            Text(errorMessage)
-                                .foregroundStyle(CairnColor.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        } icon: {
-                            Image(systemName: "exclamationmark.triangle")
-                                .foregroundStyle(CairnColor.warning)
-                                .accessibilityHidden(true)
+                        .focused($focusedField, equals: .memo)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            focusedField = nil
                         }
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(errorMessage)
-                    }
+                        .accessibilityHint("Add an optional note for this recurring transaction.")
+                }
+            } header: {
+                CairnEditorSectionHeader(title: "Note")
+            }
+
+            if let errorMessage = editor.errorMessage {
+                Section {
+                    CairnFormErrorView(message: errorMessage)
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(CairnColor.canvas)
-            .navigationTitle(editor.title)
-            .tint(CairnColor.plum)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: cancel)
-                        .disabled(editor.isSaving)
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    focusedField = nil
                 }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        save()
-                    } label: {
-                        if editor.isSaving {
-                            ProgressView()
-                                .tint(CairnColor.plum)
-                        } else {
-                            Text("Save")
-                        }
-                    }
-                    .disabled(editor.isSaving)
-                    .accessibilityLabel("Save Recurring Transaction")
-                }
+            }
+        }
+        .task {
+            if editor.mode == .create {
+                focusedField = .amount
             }
         }
     }

@@ -123,6 +123,37 @@ struct GoalsStoreTests {
         #expect(savedGoal.targetDate == nil)
     }
 
+    @Test func goalEditorCanSaveOnlyValidInputWhileIdle() {
+        let editor = GoalEditorState(goal: nil, locale: dotDecimalLocale)
+        editor.currencyCode = "GBP"
+
+        #expect(editor.canSave == false)
+
+        editor.name = "Emergency fund"
+        editor.targetAmountText = "0"
+        editor.currentAmountText = "0"
+        #expect(editor.canSave)
+
+        editor.targetAmountText = "100"
+        editor.currentAmountText = "100"
+        #expect(editor.canSave)
+
+        editor.currentAmountText = "101"
+        #expect(editor.canSave == false)
+
+        editor.currentAmountText = "50"
+        editor.currencyCode = "invalid"
+        #expect(editor.canSave == false)
+
+        editor.currencyCode = "GBP"
+        editor.name = "   "
+        #expect(editor.canSave == false)
+
+        editor.name = "Emergency fund"
+        editor.isSaving = true
+        #expect(editor.canSave == false)
+    }
+
     @Test func localizedHighPrecisionAmountsArePreservedOnCreate() async throws {
         let goalRepository = GoalsFeatureGoalRepository()
         let store = makeStore(

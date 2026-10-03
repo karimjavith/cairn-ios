@@ -8,65 +8,77 @@
 import SwiftUI
 
 struct CategoryEditorView: View {
+    private enum Field: Hashable {
+        case name
+    }
+
     @Bindable var editor: CategoryEditorState
     let cancel: () -> Void
     let save: () -> Void
+    @FocusState private var focusedField: Field?
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Category") {
-                    TextField("Name", text: $editor.name)
-                        .textContentType(.name)
+        CairnEditorScaffold(
+            title: editor.title,
+            saveAccessibilityLabel: "Save Category",
+            isSaving: editor.isSaving,
+            canSave: editor.canSave,
+            cancel: cancel,
+            save: save
+        ) {
+            Section {
+                VStack(alignment: .leading, spacing: CairnSpacing.small) {
+                    Text("Category name")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(CairnColor.textPrimary)
 
-                    Picker("Kind", selection: $editor.kind) {
+                    TextField("For example, Groceries", text: $editor.name)
+                        .textInputAutocapitalization(.words)
+                        .autocorrectionDisabled(false)
+                        .focused($focusedField, equals: .name)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            focusedField = nil
+                        }
+                        .accessibilityLabel("Category name")
+                        .accessibilityHint("Enter a name that helps you identify this category.")
+                }
+
+                VStack(alignment: .leading, spacing: CairnSpacing.small) {
+                    Text("Category type")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(CairnColor.textPrimary)
+
+                    Picker("Category type", selection: $editor.kind) {
                         ForEach(CategoryKind.allCases, id: \.self) { kind in
                             Text(kind.displayName)
                                 .tag(kind)
                         }
                     }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
                 }
+            } header: {
+                CairnEditorSectionHeader(title: "Category details")
+            }
 
-                if let errorMessage = editor.errorMessage {
-                    Section {
-                        Label {
-                            Text(errorMessage)
-                                .foregroundStyle(CairnColor.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        } icon: {
-                            Image(systemName: "exclamationmark.triangle")
-                                .foregroundStyle(CairnColor.warning)
-                                .accessibilityHidden(true)
-                        }
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(errorMessage)
-                    }
+            if let errorMessage = editor.errorMessage {
+                Section {
+                    CairnFormErrorView(message: errorMessage)
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(CairnColor.canvas)
-            .navigationTitle(editor.title)
-            .tint(CairnColor.plum)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: cancel)
-                        .disabled(editor.isSaving)
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    focusedField = nil
                 }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        save()
-                    } label: {
-                        if editor.isSaving {
-                            ProgressView()
-                                .tint(CairnColor.plum)
-                        } else {
-                            Text("Save")
-                        }
-                    }
-                    .disabled(editor.isSaving)
-                    .accessibilityLabel("Save Category")
-                }
+            }
+        }
+        .task {
+            if editor.mode == .create {
+                focusedField = .name
             }
         }
     }

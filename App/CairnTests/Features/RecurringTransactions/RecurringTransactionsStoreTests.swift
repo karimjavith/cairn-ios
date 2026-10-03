@@ -226,6 +226,43 @@ struct RecurringTransactionsStoreTests {
         #expect(store.editor != nil)
     }
 
+    @Test func recurringTransactionEditorCanSaveOnlyValidInputWhileIdle() async throws {
+        let account = try makeAccount(currencyCode: "GBP")
+        let store = makeStore(
+            accountRepository: RecurringTransactionsFeatureAccountRepository(accounts: [account]),
+            locale: dotDecimalLocale
+        )
+
+        await store.loadRecurringTransactions()
+        store.startCreateRecurringTransaction()
+        let editor = try #require(store.editor)
+        #expect(editor.canSave == false)
+
+        editor.amountText = "10.25"
+        #expect(editor.canSave)
+
+        editor.selectedAccountID = nil
+        #expect(editor.canSave == false)
+
+        editor.selectedAccountID = account.id
+        editor.amountText = "not an amount"
+        #expect(editor.canSave == false)
+
+        editor.amountText = "-1"
+        #expect(editor.canSave == false)
+
+        editor.amountText = "10.25"
+        editor.hasEndDate = true
+        editor.endDate = editor.startDate
+        #expect(editor.canSave == false)
+
+        editor.endDate = editor.startDate.addingTimeInterval(1)
+        #expect(editor.canSave)
+
+        editor.isSaving = true
+        #expect(editor.canSave == false)
+    }
+
     @Test func repositorySaveFailureSurfaces() async throws {
         let account = try makeAccount()
         let store = makeStore(

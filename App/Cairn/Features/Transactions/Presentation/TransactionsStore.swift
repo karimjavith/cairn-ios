@@ -283,6 +283,10 @@ final class TransactionEditorState: Identifiable {
         }
     }
 
+    var canSave: Bool {
+        !isSaving && (try? makeDraft()) != nil
+    }
+
     func makeDraft() throws -> Draft {
         guard let selectedAccountID,
               let account = accounts.first(where: { $0.id == selectedAccountID }) else {

@@ -110,6 +110,43 @@ struct BudgetsStoreTests {
         #expect(store.editor == nil)
     }
 
+    @Test func budgetEditorCanSaveOnlyValidInputWhileIdle() throws {
+        let category = try makeCategory()
+        let editor = BudgetEditorState(
+            budget: nil,
+            categories: [category],
+            locale: dotDecimalLocale
+        )
+        editor.currencyCode = "GBP"
+
+        #expect(editor.canSave == false)
+
+        editor.limitText = "100"
+        #expect(editor.canSave)
+
+        editor.selectedCategoryID = nil
+        #expect(editor.canSave == false)
+
+        editor.selectedCategoryID = CategoryID()
+        #expect(editor.canSave == false)
+
+        editor.selectedCategoryID = category.id
+        editor.currencyCode = "invalid"
+        #expect(editor.canSave == false)
+
+        editor.currencyCode = "GBP"
+        editor.endDate = editor.startDate
+        #expect(editor.canSave == false)
+
+        editor.endDate = editor.startDate.addingTimeInterval(1)
+        editor.limitText = "-1"
+        #expect(editor.canSave == false)
+
+        editor.limitText = "100"
+        editor.isSaving = true
+        #expect(editor.canSave == false)
+    }
+
     @Test func localizedHighPrecisionLimitIsPreservedOnCreate() async throws {
         let category = try makeCategory()
         let budgetRepository = BudgetsFeatureBudgetRepository()
